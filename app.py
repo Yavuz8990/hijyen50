@@ -26,43 +26,48 @@ sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Gir
 
 # --- 6. SAYFA İÇERİKLERİ ---
 
-# --- ANA SAYFA (Yeni Düzen) ---
+# --- ANA SAYFA ---
 if sayfa == "🏠 Ana Sayfa":
     st.title("🚀 Hijyen 5.0: Dijital Okul Projesi")
     st.info("💡 Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
     
     st.write("---")
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
-            # Afişi ana sayfada ortalı şekilde gösterir
             st.image("afis.jpg", use_container_width=True, caption="Okulumuzun Hijyen Rehberi")
         except:
             st.warning("⚠️ Afiş görseli (afis.jpg) GitHub'a yüklenmediği için gösterilemiyor.")
 
-    st.write("---")
-    st.markdown("""
-    ### 🌟 Sistem Özellikleri
-    * **Güvenli Denetim:** Sadece yetkili denetçiler tarafından şifreli giriş.
-    * **Anlık Raporlama:** Verilerin anında dijital arşive işlenmesi.
-    * **Gelişmiş Analiz:** İdare için haftalık ve aylık performans grafikleri.
-    """)
-
-# --- DENETÇİ SAYFASI (Giriş Korumalı) ---
+# --- DENETÇİ SAYFASI (Butonlu Giriş) ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Yetkilendirme")
     
-    auth_col1, auth_col2 = st.columns(2)
-    with auth_col1:
-        d_u = st.text_input("Denetçi Kullanıcı Adı:")
-    with auth_col2:
-        d_p = st.text_input("Denetçi Şifresi:", type="password")
+    with st.container(border=True):
+        d_u = st.text_input("Denetçi Kullanıcı Adı:", key="denetci_user")
+        d_p = st.text_input("Denetçi Şifresi:", type="password", key="denetci_pass")
+        denetci_giris_btn = st.button("Sisteme Giriş Yap")
 
-    if d_u == DENETCI_USER and d_p == DENETCI_PASS:
-        st.success("✅ Denetçi Yetkisi Onaylandı. Formu doldurabilirsiniz.")
+    if denetci_giris_btn:
+        if d_u == DENETCI_USER and d_p == DENETCI_PASS:
+            st.session_state['denetci_logged_in'] = True
+            st.success("✅ Yetki Onaylandı!")
+        else:
+            st.error("❌ Hatalı Denetçi Bilgileri!")
+            st.session_state['denetci_logged_in'] = False
+
+    if st.session_state.get('denetci_logged_in'):
         st.divider()
-        
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         
-        # QR Kod Parametresi
+        query_params = st.query_params
+        gelen_sinif = query_params.get("sinif", None)
+        idx = siniflar.index(gelen_sinif) if gelen_sinif in siniflar else 0
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            s_sinif = st.selectbox("Sınıf Seçin:", siniflar, index=idx)
+        with c2:
+            s_tarih = st.date_input("Tarih:", guncel_an)
+
+        with
