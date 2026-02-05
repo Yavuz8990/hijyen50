@@ -22,7 +22,10 @@ guncel_an = datetime.now(tr_timezone)
 # --- 4. VERİ SİSTEMİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
-        return pd.read_csv(DB_FILE)
+        df = pd.read_csv(DB_FILE)
+        # Tarih sütununu karşılaştırma yapabilmek için tarih formatına çeviriyoruz
+        df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
+        return df
     else:
         return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
@@ -100,11 +103,19 @@ elif sayfa == "📝 Denetçi Girişi":
             k5 = st.checkbox("✨ Genel Sınıf Tertibi")
             
             if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
-                puan = sum([k1, k2, k3, k4, k5]) * 20
-                yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
-                veri_kaydet(yeni)
-                st.success(f"✅ Başarılı! {s_sinif} için {puan} puan arşive kaydedildi.")
-                st.balloons()
+                # MÜKERRER KAYIT KONTROLÜ
+                mevcut_df = verileri_yukle()
+                # Seçilen tarih ve sınıfa ait kayıt var mı bakıyoruz
+                zaten_var_mi = mevcut_df[(mevcut_df['Tarih'] == s_tarih) & (mevcut_df['Sınıf'] == s_sinif)]
+                
+                if not zaten_var_mi.empty:
+                    st.error(f"❌ HATA: {s_sinif} sınıfı için {s_tarih} tarihinde zaten bir değerlendirme yapılmış! Bir sınıfa günde sadece bir kez puan verilebilir.")
+                else:
+                    puan = sum([k1, k2, k3, k4, k5]) * 20
+                    yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
+                    veri_kaydet(yeni)
+                    st.success(f"✅ Başarılı! {s_sinif} için {puan} puan arşive kaydedildi.")
+                    st.balloons()
 
 # --- YÖNETİCİ SAYFASI ---
 elif sayfa == "📊 Yönetici Paneli":
@@ -127,9 +138,9 @@ elif sayfa == "📊 Yönetici Paneli":
             st.session_state['admin_onayli'] = False
             st.rerun()
 
-        # Mum Grafiği Fonksiyonu
         def ciz_teknolojik_mum(veri, baslik):
             if veri.empty: return None
+            # Grafik için istatistikleri hesapla
             stats = veri.groupby("Sınıf")["Puan"].agg(['mean', 'max', 'min']).reset_index()
             fig = go.Figure(data=[go.Candlestick(
                 x=stats['Sınıf'],
@@ -144,17 +155,22 @@ elif sayfa == "📊 Yönetici Paneli":
 
         df = verileri_yukle()
         if not df.empty:
-            df['Tarih'] = pd.to_datetime(df['Tarih'])
+            # Filtreleme için datetime objesine çevir
+            df_filter = df.copy()
+            df_filter['Tarih'] = pd.to_datetime(df_filter['Tarih']).dt.date
+            
             tab_h, tab_a = st.tabs(["📅 Haftalık Analiz", "📈 Aylık Trend"])
             
             with tab_h:
-                h_df = df[df['Tarih'].dt.date >= (guncel_an - timedelta(days=7)).date()]
+                h_limit = (guncel_an - timedelta(days=7)).date()
+                h_df = df_filter[df_filter['Tarih'] >= h_limit]
                 fig_h = ciz_teknolojik_mum(h_df, "Haftalık Sınıf Hijyen Endeksi")
                 if fig_h: st.plotly_chart(fig_h, use_container_width=True)
                 else: st.info("Haftalık veri yok.")
 
             with tab_a:
-                a_df = df[df['Tarih'].dt.date >= (guncel_an - timedelta(days=30)).date()]
+                a_limit = (guncel_an - timedelta(days=30)).date()
+                a_df = df_filter[df_filter['Tarih'] >= a_limit]
                 fig_a = ciz_teknolojik_mum(a_df, "Aylık Hijyen Trend Analizi")
                 if fig_a: st.plotly_chart(fig_a, use_container_width=True)
                 else: st.info("Aylık veri yok.")
