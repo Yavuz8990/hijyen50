@@ -54,89 +54,75 @@ if sayfa == "🏠 Ana Sayfa":
             </p>
         </div>
     """, unsafe_allow_html=True)
-    
-    st.info("💡 **BİLGİLENDİRME:** Lütfen sol menüden yetki seviyenize uygun giriş alanını seçiniz.")
     st.write("---")
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        try:
-            st.image("afis.jpg", use_container_width=True)
-        except:
-            st.warning("⚠️ `afis.jpg` bulunamadı.")
+        try: st.image("afis.jpg", use_container_width=True)
+        except: st.warning("⚠️ `afis.jpg` bulunamadı.")
+    
+    st.markdown("### 🎯 Proje Felsefesi")
+    st.markdown("* ✨ **Ölçülebilirlik:** Temizliği şansa değil, veriye dayandırıyoruz.\n* 📊 **Güvenlik:** Karekod doğrulaması ile yanlış veri girişini engelliyoruz.")
 
-    st.write("")
-    st.subheader("🎯 Proje Felsefesi")
-    st.markdown("""
-    * ✨ **Ölçülebilirlik Hedefi:** En büyük sorunumuz temizlik yapılmaması değil, temizliğin ölçülememesi ve sürdürülebilir bir alışkanlığa dönüşmemesidir.
-    * 📊 **Veri Odaklı Yaklaşım:** Dijital olmayan bir sistemde, hijyen sadece 'şans' eseridir. Biz şansı değil, veriyi temel alıyoruz.
-    """)
-
-# --- 📝 DENETÇİ SAYFASI (GÜVENLİ VE QR UYUMLU) ---
+# --- 📝 DENETÇİ SAYFASI (KAREKOD KİLİTLİ) ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Ekranı")
     
-    # URL'den sınıf bilgisini yakala (Öğrenci okutsa bile burada bir şey görmez)
+    # URL'den sınıf bilgisini yakala
     query_params = st.query_params
     url_sinif = query_params.get("sinif", None)
     
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
 
-    # GÜVENLİK KAPISI: Önce şifre sorma
     if not st.session_state['denetci_onayli']:
         with st.container(border=True):
-            st.subheader("🔐 Yetkili Erişimi")
-            st.write("Değerlendirme formunu açmak için lütfen bilgilerinizi giriniz.")
-            d_u = st.text_input("Denetçi Kullanıcı Adı:", key="d_u")
+            st.subheader("🔐 Yetkili Girişi")
+            d_u = st.text_input("Kullanıcı Adı:", key="d_u")
             d_p = st.text_input("Şifre:", type="password", key="d_p")
             if st.button("Sisteme Giriş Yap"):
                 if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
-                else:
-                    st.error("❌ Hatalı Giriş! Bu alan sadece yetkili denetçilere özeldir.")
-        st.warning("⚠️ Barkod okutmuş olsanız dahi giriş yapmadan işlem yapılamaz.")
-    
-    # ŞİFRE DOĞRUYSA FORM AÇILIR
+                else: st.error("❌ Hatalı Giriş!")
     else:
         st.success(f"🔓 Hoş geldiniz Yetkili: {DENETCI_USER}")
+        
+        # KAREKOD KONTROLÜ
+        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
+        
+        if url_sinif and url_sinif in siniflar:
+            st.info(f"📍 Denetim Konumu: **{url_sinif}**")
+            
+            # Sınıf seçimi yerine sadece okunan sınıfı gösteriyoruz (Değiştirilemez)
+            s_sinif = url_sinif
+            s_tarih = st.date_input("📅 Denetim Tarihi:", bugun, disabled=True)
+
+            with st.form("puanlama_formu"):
+                st.subheader(f"📋 {s_sinif} Sınıfı Hijyen Formu")
+                k1 = st.checkbox("💨 Havalandırma Durumu")
+                k2 = st.checkbox("🪑 Sıra ve Masa Temizliği")
+                k3 = st.checkbox("🧹 Zemin ve Köşelerin Hijyeni")
+                k4 = st.checkbox("🗑️ Çöp Kutusu ve Atık Yönetimi")
+                k5 = st.checkbox("✨ Genel Sınıf Tertibi")
+                
+                if st.form_submit_button("💾 VERİYİ MÜHÜRLE"):
+                    df = verileri_yukle()
+                    zaten_var_mi = df[(df['Tarih'] == s_tarih) & (df['Sınıf'] == s_sinif)]
+                    
+                    if not zaten_var_mi.empty:
+                        st.error(f"❌ Bu sınıf için bugün zaten kayıt yapılmış!")
+                    else:
+                        puan = sum([k1, k2, k3, k4, k5]) * 20
+                        yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
+                        veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
+                        st.success(f"✅ Başarılı! {s_sinif} verisi kaydedildi.")
+                        st.balloons()
+        else:
+            st.warning("⚠️ **DİKKAT:** Lütfen denetim yapmak istediğiniz sınıfın kapısındaki karekodu okutunuz.")
+            st.write("Sistem, fiziksel karekod doğrulaması olmadan değerlendirme yapmanıza izin vermez.")
+
         if st.button("🚪 Oturumu Kapat"):
             st.session_state['denetci_onayli'] = False
             st.rerun()
-        
-        st.divider()
-        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
-        
-        # Eğer QR okutulduysa ve şifre girildiyse o sınıfı otomatik seç
-        default_idx = 0
-        if url_sinif in siniflar:
-            default_idx = siniflar.index(url_sinif)
-            st.info(f"📱 **QR Algılandı:** {url_sinif} sınıfı formu sizin için hazırlandı.")
-
-        col_s, col_t = st.columns(2)
-        with col_s: s_sinif = st.selectbox("🏫 Denetlenecek Sınıf:", siniflar, index=default_idx)
-        with col_t: s_tarih = st.date_input("📅 Denetim Tarihi:", bugun)
-
-        with st.form("puanlama_formu"):
-            st.subheader("📋 Hijyen Değerlendirme Maddeleri")
-            k1 = st.checkbox("💨 Havalandırma Durumu")
-            k2 = st.checkbox("🪑 Sıra ve Masa Temizliği")
-            k3 = st.checkbox("🧹 Zemin ve Köşelerin Hijyeni")
-            k4 = st.checkbox("🗑️ Çöp Kutusu ve Atık Yönetimi")
-            k5 = st.checkbox("✨ Genel Sınıf Tertibi")
-            
-            if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
-                df = verileri_yukle()
-                zaten_var_mi = df[(df['Tarih'] == s_tarih) & (df['Sınıf'] == s_sinif)]
-                
-                if not zaten_var_mi.empty:
-                    st.error(f"❌ Bu sınıf ({s_sinif}) için bugün zaten kayıt yapılmış!")
-                else:
-                    puan = sum([k1, k2, k3, k4, k5]) * 20
-                    yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
-                    veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                    st.success(f"✅ Başarılı! {s_sinif} için {puan} puan arşive kaydedildi.")
-                    st.balloons()
 
 # --- 📊 YÖNETİCİ PANELİ ---
 elif sayfa == "📊 Yönetici Paneli":
@@ -145,7 +131,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
     if not st.session_state['admin_onayli']:
         with st.container(border=True):
-            st.subheader("🔐 Yönetici Girişi")
             y_u = st.text_input("Yönetici Adı:", key="y_u")
             y_p = st.text_input("Yönetici Şifresi:", type="password", key="y_p")
             if st.button("Paneli Kilidini Aç"):
@@ -155,34 +140,21 @@ elif sayfa == "📊 Yönetici Paneli":
                 else: st.error("❌ Yetkisiz Erişim!")
     else:
         st.success("🔓 Yönetim Paneli Aktif.")
-        if st.button("🚪 Güvenli Çıkış"):
-            st.session_state['admin_onayli'] = False
-            st.rerun()
-
+        
         df = verileri_yukle()
         if not df.empty:
             tab_g, tab_h, tab_a = st.tabs(["📌 Günlük", "📅 Haftalık", "📈 Aylık"])
             with tab_g:
                 g_df = df[df['Tarih'] == bugun]
                 if not g_df.empty:
-                    st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4), use_container_width=True)
-                else: st.info("Bugün veri yok.")
+                    st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title="Bugünkü Durum"), use_container_width=True)
+                else: st.info("Bugün henüz veri yok.")
             
-            # --- TARİH ARAMA ---
-            st.divider()
-            secilen_tarih = st.date_input("🔍 Tarih Sorgula:", bugun)
-            t_df = df[df['Tarih'] == secilen_tarih]
-            if not t_df.empty:
-                st.dataframe(t_df, use_container_width=True)
-                if st.button(f"🗑️ {secilen_tarih} Tarihli Tüm Verileri Sil"):
-                    veri_listesini_guncelle(df[df['Tarih'] != secilen_tarih])
-                    st.rerun()
-
             # --- SINIF BAZLI YÖNETİM ---
             st.divider()
-            st.subheader("📂 Sınıf Yönetimi")
+            st.subheader("📂 Kayıt Yönetimi")
             for sinif in sorted(df['Sınıf'].unique()):
-                with st.expander(f"🏫 {sinif} Kayıtları"):
+                with st.expander(f"🏫 {sinif} Arşivi"):
                     s_df = df[df['Sınıf'] == sinif]
                     for idx, row in s_df.iterrows():
                         c1, c2 = st.columns([5, 1])
@@ -192,3 +164,7 @@ elif sayfa == "📊 Yönetici Paneli":
                             st.rerun()
         else:
             st.info("Kayıt bulunmuyor.")
+
+        if st.button("🚪 Güvenli Çıkış"):
+            st.session_state['admin_onayli'] = False
+            st.rerun()
