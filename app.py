@@ -75,4 +75,3 @@ elif sayfa == "📊 Yönetici Analiz Paneli":
     if y_user == YONETICI_USER and y_pass == YONETICI_PASS:
         st.success("Yönetici Kimliği Doğrulandı.")
         df = st.session
-
