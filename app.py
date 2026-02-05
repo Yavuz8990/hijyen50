@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta
 import pytz
-import plotly.graph_objects as go
+import plotly.express as px
 
 # --- 1. YETKİ VE DOSYA AYARLARI ---
 DENETCI_USER = "admin"
@@ -66,7 +66,6 @@ if sayfa == "🏠 Ana Sayfa":
         except:
             st.warning("⚠️ `afis.jpg` bulunamadı. Lütfen GitHub dizinine ekleyin.")
 
-    # --- VİZYON MADDELERİ (YENİ) ---
     st.write("")
     st.subheader("🎯 Proje Felsefesi")
     st.markdown("""
@@ -135,7 +134,7 @@ elif sayfa == "📝 Denetçi Girişi":
                     st.success(f"✅ Başarılı! {s_sinif} için {puan} puan arşive kaydedildi.")
                     st.balloons()
 
-# --- YÖNETİCİ SAYFASI ---
+# --- YÖNETİCİ SAYFASI (PASTA GRAFİKLİ) ---
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
@@ -156,20 +155,6 @@ elif sayfa == "📊 Yönetici Paneli":
             st.session_state['admin_onayli'] = False
             st.rerun()
 
-        def ciz_teknolojik_mum(veri, baslik):
-            if veri.empty: return None
-            stats = veri.groupby("Sınıf")["Puan"].agg(['mean', 'max', 'min']).reset_index()
-            fig = go.Figure(data=[go.Candlestick(
-                x=stats['Sınıf'],
-                open=stats['mean'], high=stats['max'],
-                low=stats['min'], close=stats['mean'],
-                increasing_line_color='#00D2FF', decreasing_line_color='#00D2FF'
-            )])
-            fig.update_layout(title=baslik, template="plotly_dark", xaxis_rangeslider_visible=False,
-                            yaxis_title="Puan", plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color="#00D2FF"))
-            return fig
-
         df = verileri_yukle()
         if not df.empty:
             df_filter = df.copy()
@@ -180,15 +165,22 @@ elif sayfa == "📊 Yönetici Paneli":
             with tab_h:
                 h_limit = (guncel_an - timedelta(days=7)).date()
                 h_df = df_filter[df_filter['Tarih'] >= h_limit]
-                fig_h = ciz_teknolojik_mum(h_df, "Haftalık Sınıf Hijyen Endeksi")
-                if fig_h: st.plotly_chart(fig_h, use_container_width=True)
+                if not h_df.empty:
+                    # Toplam puana göre pasta grafiği
+                    h_sum = h_df.groupby("Sınıf")["Puan"].sum().reset_index()
+                    fig_h = px.pie(h_sum, values='Puan', names='Sınıf', hole=0.4,
+                                 title="Haftalık Sınıf Puan Dağılımı (En çok puan alan en büyük dilim)")
+                    st.plotly_chart(fig_h, use_container_width=True)
                 else: st.info("Haftalık veri bulunmuyor.")
 
             with tab_a:
                 a_limit = (guncel_an - timedelta(days=30)).date()
                 a_df = df_filter[df_filter['Tarih'] >= a_limit]
-                fig_a = ciz_teknolojik_mum(a_df, "Aylık Hijyen Trend Analizi")
-                if fig_a: st.plotly_chart(fig_a, use_container_width=True)
+                if not a_df.empty:
+                    a_sum = a_df.groupby("Sınıf")["Puan"].sum().reset_index()
+                    fig_a = px.pie(a_sum, values='Puan', names='Sınıf', hole=0.4,
+                                 title="Aylık Sınıf Puan Dağılımı (En çok puan alan en büyük dilim)")
+                    st.plotly_chart(fig_a, use_container_width=True)
                 else: st.info("Aylık veri bulunmuyor.")
             
             st.write("### 📂 Dijital Denetim Arşivi")
