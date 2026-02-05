@@ -18,12 +18,13 @@ st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼",
 # --- 3. TÜRKİYE SAATİ ---
 tr_timezone = pytz.timezone('Europe/Istanbul')
 guncel_an = datetime.now(tr_timezone)
+bugun = guncel_an.date()
 
 # --- 4. VERİ SİSTEMİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
-        # Karşılaştırmalar için tarih formatını koru
+        df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
         return df
     else:
         return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
@@ -64,7 +65,6 @@ if sayfa == "🏠 Ana Sayfa":
         except:
             st.warning("⚠️ `afis.jpg` bulunamadı.")
 
-    st.write("")
     st.subheader("🎯 Proje Felsefesi")
     st.markdown("""
     * ✨ **Ölçülebilirlik Hedefi:** En büyük sorunumuz temizlik yapılmaması değil, temizliğin ölçülememesi ve sürdürülebilir bir alışkanlığa dönüşmemesidir.
@@ -95,7 +95,7 @@ elif sayfa == "📝 Denetçi Girişi":
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         col_s, col_t = st.columns(2)
         with col_s: s_sinif = st.selectbox("🏫 Denetlenecek Sınıf:", siniflar)
-        with col_t: s_tarih = st.date_input("📅 Denetim Tarihi:", guncel_an)
+        with col_t: s_tarih = st.date_input("📅 Denetim Tarihi:", bugun)
 
         with st.form("puanlama_formu"):
             st.subheader("📋 Hijyen Değerlendirme Maddeleri")
@@ -107,20 +107,20 @@ elif sayfa == "📝 Denetçi Girişi":
             
             if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
                 df = verileri_yukle()
-                zaten_var_mi = df[(df['Tarih'] == str(s_tarih)) & (df['Sınıf'] == s_sinif)]
+                zaten_var_mi = df[(df['Tarih'] == s_tarih) & (df['Sınıf'] == s_sinif)]
                 
                 if not zaten_var_mi.empty:
                     st.error(f"❌ HATA: {s_sinif} sınıfı için bu tarihte zaten bir kayıt var!")
                 else:
                     puan = sum([k1, k2, k3, k4, k5]) * 20
-                    yeni = pd.DataFrame([{"Tarih": str(s_tarih), "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
+                    yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
                     veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                    st.success(f"✅ Başarılı! {s_sinif} verisi kaydedildi.")
+                    st.success(f"✅ Kaydedildi: {s_sinif} ({puan} Puan)")
                     st.balloons()
 
 # --- YÖNETİCİ SAYFASI ---
 elif sayfa == "📊 Yönetici Paneli":
-    st.title("📊 Yönetici Analiz ve Veri Yönetimi")
+    st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
 
     if not st.session_state['admin_onayli']:
@@ -140,46 +140,62 @@ elif sayfa == "📊 Yönetici Paneli":
 
         df = verileri_yukle()
         if not df.empty:
-            # Analiz Sekmeleri
-            tab_h, tab_a = st.tabs(["📅 Haftalık Analiz", "📈 Aylık Trend"])
-            with tab_h:
-                h_df = df[pd.to_datetime(df['Tarih']).dt.date >= (guncel_an - timedelta(days=7)).date()]
-                if not h_df.empty:
-                    fig_h = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Haftalık Hijyen Dağılımı")
-                    st.plotly_chart(fig_h, use_container_width=True)
-            with tab_a:
-                a_df = df[pd.to_datetime(df['Tarih']).dt.date >= (guncel_an - timedelta(days=30)).date()]
-                if not a_df.empty:
-                    fig_a = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Aylık Hijyen Dağılımı")
-                    st.plotly_chart(fig_a, use_container_width=True)
+            # --- GENEL GRAFİKLER ---
+            tab_g, tab_h, tab_a = st.tabs(["📌 Günlük Analiz", "📅 Haftalık Analiz", "📈 Aylık Trend"])
+            
+            with tab_g:
+                g_df = df[df['Tarih'] == bugun]
+                if not g_df.empty:
+                    fig_g = px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title=f"Bugünkü Hijyen Dağılımı ({bugun})")
+                    st.plotly_chart(fig_g, use_container_width=True)
+                else: st.info("Bugün için henüz denetim verisi girilmemiş.")
 
-            # --- VERİ YÖNETİM VE ARŞİV BÖLÜMÜ ---
+            with tab_h:
+                h_df = df[df['Tarih'] >= (bugun - timedelta(days=7))]
+                if not h_df.empty:
+                    fig_h = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Son 7 Günlük Performans")
+                    st.plotly_chart(fig_h, use_container_width=True)
+                else: st.info("Son 7 güne ait veri bulunmuyor.")
+
+            with tab_a:
+                a_df = df[df['Tarih'] >= (bugun - timedelta(days=30))]
+                if not a_df.empty:
+                    fig_a = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Son 30 Günlük Performans")
+                    st.plotly_chart(fig_a, use_container_width=True)
+                else: st.info("Son 30 güne ait veri bulunmuyor.")
+
+            # --- SINIF BAZLI VERİ YÖNETİMİ ---
             st.divider()
-            st.subheader("📂 Sınıf Bazlı Veri Yönetimi")
+            st.subheader("📂 Sınıf Bazlı Detaylı Veri Yönetimi")
             
             mevcut_siniflar = sorted(df['Sınıf'].unique())
-            
             for sinif in mevcut_siniflar:
-                with st.expander(f"🏫 {sinif} Sınıfı Kayıtları"):
-                    sinif_df = df[df['Sınıf'] == sinif].copy()
+                with st.expander(f"🏫 {sinif} Sınıfı Yönetim Alanı"):
+                    sinif_df_all = df[df['Sınıf'] == sinif].copy()
                     
-                    # Toplu Silme Butonu (Sınıf Bazlı)
-                    if st.button(f"🗑️ {sinif} Sınıfının Tüm Kayıtlarını Sil", key=f"bulk_{sinif}"):
-                        yeni_df = df[df['Sınıf'] != sinif]
-                        veri_listesini_guncelle(yeni_df)
-                        st.warning(f"{sinif} sınıfına ait tüm veriler silindi.")
+                    if st.button(f"🚨 {sinif} Sınıfının Tüm Kayıtlarını Sil", key=f"bulk_{sinif}"):
+                        veri_listesini_guncelle(df[df['Sınıf'] != sinif])
                         st.rerun()
                     
-                    st.write("---")
+                    # Sınıf içi zaman filtreleme sekmeleri
+                    s_tab_g, s_tab_h, s_tab_a = st.tabs(["Günlük", "Haftalık", "Tüm Zamanlar"])
                     
-                    # Tek Tek Silme İşlemi
-                    for index, row in sinif_df.iterrows():
-                        col_info, col_del = st.columns([4, 1])
-                        col_info.write(f"📅 **{row['Tarih']}** | ⭐ Puan: {row['Puan']} | 👤: {row['Yetkili']}")
-                        if col_del.button("Sil", key=f"del_{index}"):
-                            yeni_df = df.drop(index)
-                            veri_listesini_guncelle(yeni_df)
-                            st.error(f"Kayıt silindi: {row['Tarih']}")
-                            st.rerun()
+                    periods = {
+                        "Günlük": sinif_df_all[sinif_df_all['Tarih'] == bugun],
+                        "Haftalık": sinif_df_all[sinif_df_all['Tarih'] >= (bugun - timedelta(days=7))],
+                        "Tüm Zamanlar": sinif_df_all
+                    }
+                    
+                    for tab, p_df in zip([s_tab_g, s_tab_h, s_tab_a], periods.values()):
+                        with tab:
+                            if p_df.empty:
+                                st.write("Seçili periyotta veri yok.")
+                            else:
+                                for idx, row in p_df.iterrows():
+                                    c_info, c_del = st.columns([5, 1])
+                                    c_info.write(f"📅 {row['Tarih']} | ⭐ {row['Puan']} Puan | 👤 {row['Yetkili']}")
+                                    if c_del.button("Sil", key=f"del_{idx}"):
+                                        veri_listesini_guncelle(df.drop(idx))
+                                        st.rerun()
         else:
             st.info("Sistemde henüz kayıtlı veri bulunmuyor.")
