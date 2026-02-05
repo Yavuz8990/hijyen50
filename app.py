@@ -33,57 +33,65 @@ st.sidebar.title("🧼 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"])
 
 # --- ANA SAYFA ---
-# --- ANA SAYFA TASARIMI ---
+# --- ANA SAYFA TASARIMI (YENİ SLOGAN) ---
 if sayfa == "🏠 Ana Sayfa":
-    # Teknolojik ve Modern Başlık Tasarımı (HTML/CSS)
+    # Teknolojik Başlık ve Stil Ayarları
     st.markdown("""
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
         .main-title {
             text-align: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Orbitron', sans-serif;
             color: #00D2FF;
-            font-size: 48px;
-            font-weight: bold;
-            text-shadow: 2px 2px 10px rgba(0, 210, 255, 0.3);
-            margin-bottom: 0px;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
         .sub-title {
             text-align: center;
-            color: #777;
-            font-size: 20px;
-            margin-bottom: 30px;
+            font-family: 'Segoe UI', sans-serif;
+            color: #ffffff;
+            font-size: 18px;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            margin-bottom: 40px;
         }
         </style>
-        <div class="main-title">🧪 HİJYEN 5.0</div>
-        <div class="sub-title">Dijital Okul & Geleceğin Temizlik Standartları</div>
+        
+        <div class="main-title">HİJYEN 5.0</div>
+        <div class="sub-title">GELECEĞİN TEMİZ OKULU</div>
     """, unsafe_allow_html=True)
 
-    # Bilgilendirme Kutusu (Ortalanmış)
-    st.info("💡 Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
+    # Bilgilendirme Kutusu
+    st.info("🚨 **SİSTEM ERİŞİMİ:** Lütfen soldaki menüden yetki seviyenize göre giriş yapınız.")
     
     st.write("---")
     
-    # Afişi Ortada Göster
+    # Afiş Görseli
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
-            st.image("afis.jpg", use_container_width=True, caption="H5.0 Dijital Dönüşüm Rehberi")
+            st.image("afis.jpg", use_container_width=True, caption="Dijital Dönüşüm & Hijyen Standartları")
         except:
-            st.warning("⚠️ afis.jpg yüklenmedi. Lütfen GitHub dizinine ekleyin.")
+            st.warning("⚠️ `afis.jpg` bulunamadı. Lütfen GitHub deponuza yükleyin.")
 
     st.write("---")
     
-    # Alt tarafa teknolojik maddeler
+    # Teknolojik Bilgi Kartları
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("### 🔒 Güvenli")
-        st.write("Uçtan uca şifreli denetim kaydı.")
+        st.markdown("### 🧬 **Akıllı Veri**")
+        st.write("Her denetim dijital bir imza ile kaydedilir.")
     with c2:
-        st.markdown("### 📊 Analitik")
-        st.write("Haftalık ve aylık trend takibi.")
+        st.markdown("### 📈 **Gerçek Zamanlı**")
+        st.write("Haftalık ve aylık analizler anında güncellenir.")
     with c3:
-        st.markdown("### ♻️ Sürdürülebilir")
-        st.write("Kağıtsız, tam dijital denetim.")
+        st.markdown("### 🛡️ **Tam Güvenlik**")
+        st.write("Çift kademeli admin/denetçi doğrulama sistemi.")
 
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -180,5 +188,6 @@ elif sayfa == "📊 Yönetici Paneli":
                 st.dataframe(a_df, use_container_width=True)
             else:
                 st.info("Bu ay için henüz veri girişi yok.")
+
 
 
