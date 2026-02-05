@@ -33,16 +33,57 @@ st.sidebar.title("🧼 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"])
 
 # --- ANA SAYFA ---
+# --- ANA SAYFA TASARIMI ---
 if sayfa == "🏠 Ana Sayfa":
-    st.title("🚀 Hijyen 5.0: Dijital Okul Projesi")
+    # Teknolojik ve Modern Başlık Tasarımı (HTML/CSS)
+    st.markdown("""
+        <style>
+        .main-title {
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #00D2FF;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 2px 2px 10px rgba(0, 210, 255, 0.3);
+            margin-bottom: 0px;
+        }
+        .sub-title {
+            text-align: center;
+            color: #777;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        </style>
+        <div class="main-title">🧪 HİJYEN 5.0</div>
+        <div class="sub-title">Dijital Okul & Geleceğin Temizlik Standartları</div>
+    """, unsafe_allow_html=True)
+
+    # Bilgilendirme Kutusu (Ortalanmış)
     st.info("💡 Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
+    
     st.write("---")
+    
+    # Afişi Ortada Göster
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
-            st.image("afis.jpg", use_container_width=True, caption="Okulumuzun Hijyen Rehberi")
+            st.image("afis.jpg", use_container_width=True, caption="H5.0 Dijital Dönüşüm Rehberi")
         except:
-            st.warning("⚠️ afis.jpg yüklenmedi.")
+            st.warning("⚠️ afis.jpg yüklenmedi. Lütfen GitHub dizinine ekleyin.")
+
+    st.write("---")
+    
+    # Alt tarafa teknolojik maddeler
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("### 🔒 Güvenli")
+        st.write("Uçtan uca şifreli denetim kaydı.")
+    with c2:
+        st.markdown("### 📊 Analitik")
+        st.write("Haftalık ve aylık trend takibi.")
+    with c3:
+        st.markdown("### ♻️ Sürdürülebilir")
+        st.write("Kağıtsız, tam dijital denetim.")
 
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -139,4 +180,5 @@ elif sayfa == "📊 Yönetici Paneli":
                 st.dataframe(a_df, use_container_width=True)
             else:
                 st.info("Bu ay için henüz veri girişi yok.")
+
 
