@@ -115,7 +115,7 @@ elif sayfa == "📝 Denetçi Girişi":
                     puan = sum([k1, k2, k3, k4, k5]) * 20
                     yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
                     veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                    st.success(f"✅ Kaydedildi: {s_sinif} ({puan} Puan)")
+                    st.success(f"✅ Kaydedildi!")
                     st.balloons()
 
 # --- YÖNETİCİ SAYFASI ---
@@ -140,31 +140,29 @@ elif sayfa == "📊 Yönetici Paneli":
 
         df = verileri_yukle()
         if not df.empty:
-            # --- GENEL GRAFİKLER ---
             tab_g, tab_h, tab_a = st.tabs(["📌 Günlük Analiz", "📅 Haftalık Analiz", "📈 Aylık Trend"])
             
             with tab_g:
                 g_df = df[df['Tarih'] == bugun]
                 if not g_df.empty:
-                    fig_g = px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title=f"Bugünkü Hijyen Dağılımı ({bugun})")
+                    fig_g = px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title=f"Bugünkü Dağılım ({bugun})")
                     st.plotly_chart(fig_g, use_container_width=True)
-                else: st.info("Bugün için henüz denetim verisi girilmemiş.")
+                else: st.info("Bugün için veri yok.")
 
             with tab_h:
                 h_df = df[df['Tarih'] >= (bugun - timedelta(days=7))]
                 if not h_df.empty:
                     fig_h = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Son 7 Günlük Performans")
                     st.plotly_chart(fig_h, use_container_width=True)
-                else: st.info("Son 7 güne ait veri bulunmuyor.")
+                else: st.info("Haftalık veri yok.")
 
             with tab_a:
                 a_df = df[df['Tarih'] >= (bugun - timedelta(days=30))]
                 if not a_df.empty:
                     fig_a = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Son 30 Günlük Performans")
                     st.plotly_chart(fig_a, use_container_width=True)
-                else: st.info("Son 30 güne ait veri bulunmuyor.")
+                else: st.info("Aylık veri yok.")
 
-            # --- SINIF BAZLI VERİ YÖNETİMİ ---
             st.divider()
             st.subheader("📂 Sınıf Bazlı Detaylı Veri Yönetimi")
             
@@ -177,25 +175,26 @@ elif sayfa == "📊 Yönetici Paneli":
                         veri_listesini_guncelle(df[df['Sınıf'] != sinif])
                         st.rerun()
                     
-                    # Sınıf içi zaman filtreleme sekmeleri
                     s_tab_g, s_tab_h, s_tab_a = st.tabs(["Günlük", "Haftalık", "Tüm Zamanlar"])
                     
-                    periods = {
-                        "Günlük": sinif_df_all[sinif_df_all['Tarih'] == bugun],
-                        "Haftalık": sinif_df_all[sinif_df_all['Tarih'] >= (bugun - timedelta(days=7))],
-                        "Tüm Zamanlar": sinif_df_all
-                    }
+                    # Hatanın çözümü: Periyot adını key'e ekledik
+                    period_list = [
+                        ("Gun", sinif_df_all[sinif_df_all['Tarih'] == bugun]),
+                        ("Hafta", sinif_df_all[sinif_df_all['Tarih'] >= (bugun - timedelta(days=7))]),
+                        ("Tum", sinif_df_all)
+                    ]
                     
-                    for tab, p_df in zip([s_tab_g, s_tab_h, s_tab_a], periods.values()):
+                    for (p_label, p_df), tab in zip(period_list, [s_tab_g, s_tab_h, s_tab_a]):
                         with tab:
                             if p_df.empty:
-                                st.write("Seçili periyotta veri yok.")
+                                st.write("Veri yok.")
                             else:
                                 for idx, row in p_df.iterrows():
                                     c_info, c_del = st.columns([5, 1])
-                                    c_info.write(f"📅 {row['Tarih']} | ⭐ {row['Puan']} Puan | 👤 {row['Yetkili']}")
-                                    if c_del.button("Sil", key=f"del_{idx}"):
+                                    c_info.write(f"📅 {row['Tarih']} | ⭐ {row['Puan']} Puan")
+                                    # KEY BURADA BENZERSİZLEŞTİRİLDİ: key=f"del_{p_label}_{idx}"
+                                    if c_del.button("Sil", key=f"del_{p_label}_{idx}"):
                                         veri_listesini_guncelle(df.drop(idx))
                                         st.rerun()
         else:
-            st.info("Sistemde henüz kayıtlı veri bulunmuyor.")
+            st.info("Kayıt bulunmuyor.")
