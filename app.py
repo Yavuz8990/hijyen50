@@ -23,7 +23,6 @@ guncel_an = datetime.now(tr_timezone)
 def verileri_yukle():
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
-        # Tarih sütununu karşılaştırma yapabilmek için tarih formatına çeviriyoruz
         df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
         return df
     else:
@@ -63,9 +62,30 @@ if sayfa == "🏠 Ana Sayfa":
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
-            st.image("afis.jpg", use_container_width=True, caption="Dijital Dönüşüm & Hijyen Standartları")
+            st.image("afis.jpg", use_container_width=True)
         except:
-            st.warning("⚠️ `afis.jpg` bulunamadı. Lütfen GitHub'a yükleyin.")
+            st.warning("⚠️ `afis.jpg` bulunamadı. Lütfen GitHub dizinine ekleyin.")
+
+    # --- VİZYON MADDELERİ (YENİ) ---
+    st.write("")
+    st.subheader("🎯 Proje Felsefesi")
+    st.markdown("""
+    * ✨ **Ölçülebilirlik Hedefi:** En büyük sorunumuz temizlik yapılmaması değil, temizliğin ölçülememesi ve sürdürülebilir bir alışkanlığa dönüşmemesidir.
+    * 📊 **Veri Odaklı Yaklaşım:** Dijital olmayan bir sistemde, hijyen sadece 'şans' eseridir. Biz şansı değil, veriyi temel alıyoruz.
+    """)
+
+    st.write("---")
+    
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("#### 🧬 **Dijital İz**")
+        st.write("Her denetim saniyeler içinde arşive mühürlenir.")
+    with c2:
+        st.markdown("#### 📈 **Analitik Güç**")
+        st.write("Haftalık ve aylık verilerle okul yönetimi kolaylaşır.")
+    with c3:
+        st.markdown("#### 🛡️ **Tam Güvenlik**")
+        st.write("Denetçi ve Yönetici için ayrı şifreli giriş protokolü.")
 
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -103,13 +123,11 @@ elif sayfa == "📝 Denetçi Girişi":
             k5 = st.checkbox("✨ Genel Sınıf Tertibi")
             
             if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
-                # MÜKERRER KAYIT KONTROLÜ
                 mevcut_df = verileri_yukle()
-                # Seçilen tarih ve sınıfa ait kayıt var mı bakıyoruz
                 zaten_var_mi = mevcut_df[(mevcut_df['Tarih'] == s_tarih) & (mevcut_df['Sınıf'] == s_sinif)]
                 
                 if not zaten_var_mi.empty:
-                    st.error(f"❌ HATA: {s_sinif} sınıfı için {s_tarih} tarihinde zaten bir değerlendirme yapılmış! Bir sınıfa günde sadece bir kez puan verilebilir.")
+                    st.error(f"❌ HATA: {s_sinif} sınıfı için bu tarihte zaten bir kayıt var! Günde tek giriş hakkınız bulunmaktadır.")
                 else:
                     puan = sum([k1, k2, k3, k4, k5]) * 20
                     yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
@@ -140,7 +158,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
         def ciz_teknolojik_mum(veri, baslik):
             if veri.empty: return None
-            # Grafik için istatistikleri hesapla
             stats = veri.groupby("Sınıf")["Puan"].agg(['mean', 'max', 'min']).reset_index()
             fig = go.Figure(data=[go.Candlestick(
                 x=stats['Sınıf'],
@@ -155,7 +172,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
         df = verileri_yukle()
         if not df.empty:
-            # Filtreleme için datetime objesine çevir
             df_filter = df.copy()
             df_filter['Tarih'] = pd.to_datetime(df_filter['Tarih']).dt.date
             
@@ -166,14 +182,14 @@ elif sayfa == "📊 Yönetici Paneli":
                 h_df = df_filter[df_filter['Tarih'] >= h_limit]
                 fig_h = ciz_teknolojik_mum(h_df, "Haftalık Sınıf Hijyen Endeksi")
                 if fig_h: st.plotly_chart(fig_h, use_container_width=True)
-                else: st.info("Haftalık veri yok.")
+                else: st.info("Haftalık veri bulunmuyor.")
 
             with tab_a:
                 a_limit = (guncel_an - timedelta(days=30)).date()
                 a_df = df_filter[df_filter['Tarih'] >= a_limit]
                 fig_a = ciz_teknolojik_mum(a_df, "Aylık Hijyen Trend Analizi")
                 if fig_a: st.plotly_chart(fig_a, use_container_width=True)
-                else: st.info("Aylık veri yok.")
+                else: st.info("Aylık veri bulunmuyor.")
             
             st.write("### 📂 Dijital Denetim Arşivi")
             st.dataframe(df, use_container_width=True)
