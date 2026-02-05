@@ -163,6 +163,25 @@ elif sayfa == "📊 Yönetici Paneli":
                     st.plotly_chart(fig_a, use_container_width=True)
                 else: st.info("Aylık veri yok.")
 
+            # --- TARİH BAZLI ARAMA VE YÖNETİM ---
+            st.divider()
+            st.subheader("🔍 Tarih Bazlı Toplu Veri Sorgulama")
+            secilen_tarih = st.date_input("Sorgulamak istediğiniz tarihi seçin:", bugun, key="search_date")
+            tarih_df = df[df['Tarih'] == secilen_tarih]
+
+            if not tarih_df.empty:
+                st.success(f"📅 {secilen_tarih} tarihinde toplam {len(tarih_df)} kayıt bulundu.")
+                st.dataframe(tarih_df[["Sınıf", "Puan", "Yetkili"]], use_container_width=True)
+                
+                if st.button(f"🗑️ {secilen_tarih} Tarihindeki Tüm Kayıtları Sil", key="bulk_delete_date"):
+                    yeni_df = df[df['Tarih'] != secilen_tarih]
+                    veri_listesini_guncelle(yeni_df)
+                    st.warning(f"{secilen_tarih} tarihli tüm veriler silindi.")
+                    st.rerun()
+            else:
+                st.info(f"{secilen_tarih} tarihine ait herhangi bir kayıt bulunamadı.")
+
+            # --- SINIF BAZLI DETAYLI VERİ YÖNETİMİ ---
             st.divider()
             st.subheader("📂 Sınıf Bazlı Detaylı Veri Yönetimi")
             
@@ -176,8 +195,6 @@ elif sayfa == "📊 Yönetici Paneli":
                         st.rerun()
                     
                     s_tab_g, s_tab_h, s_tab_a = st.tabs(["Günlük", "Haftalık", "Tüm Zamanlar"])
-                    
-                    # Hatanın çözümü: Periyot adını key'e ekledik
                     period_list = [
                         ("Gun", sinif_df_all[sinif_df_all['Tarih'] == bugun]),
                         ("Hafta", sinif_df_all[sinif_df_all['Tarih'] >= (bugun - timedelta(days=7))]),
@@ -192,8 +209,7 @@ elif sayfa == "📊 Yönetici Paneli":
                                 for idx, row in p_df.iterrows():
                                     c_info, c_del = st.columns([5, 1])
                                     c_info.write(f"📅 {row['Tarih']} | ⭐ {row['Puan']} Puan")
-                                    # KEY BURADA BENZERSİZLEŞTİRİLDİ: key=f"del_{p_label}_{idx}"
-                                    if c_del.button("Sil", key=f"del_{p_label}_{idx}"):
+                                    if c_del.button("Sil", key=f"del_{sinif}_{p_label}_{idx}"):
                                         veri_listesini_guncelle(df.drop(idx))
                                         st.rerun()
         else:
