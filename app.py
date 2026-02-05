@@ -39,7 +39,7 @@ if sayfa == "🏠 Ana Sayfa":
         except:
             st.warning("⚠️ Afiş görseli (afis.jpg) GitHub'a yüklenmediği için gösterilemiyor.")
 
-# --- DENETÇİ SAYFASI (Butonlu Giriş) ---
+# --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Yetkilendirme")
     
@@ -56,57 +56,12 @@ elif sayfa == "📝 Denetçi Girişi":
             st.error("❌ Hatalı Denetçi Bilgileri!")
             st.session_state['denetci_logged_in'] = False
 
+    # Giriş Başarılıysa Maddeleri Göster
     if st.session_state.get('denetci_logged_in'):
         st.divider()
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         
+        # QR Kod Parametresi Takibi
         query_params = st.query_params
         gelen_sinif = query_params.get("sinif", None)
-        idx = siniflar.index(gelen_sinif) if gelen_sinif in siniflar else 0
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            s_sinif = st.selectbox("Sınıf Seçin:", siniflar, index=idx)
-        with c2:
-            s_tarih = st.date_input("Tarih:", guncel_an)
-
-        with st.form("puanlama_formu"):
-            st.subheader("5 Maddelik Hijyen Kontrolü")
-            m = [st.checkbox(f"{i+1}. Kriter") for i in range(5)]
-            
-            if st.form_submit_button("ONAYLA VE VERİYİ MÜHÜRLE"):
-                skor = sum(m) * 20
-                yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": skor, "Yetkili": d_u}])
-                st.session_state['veritabani'] = pd.concat([st.session_state['veritabani'], yeni], ignore_index=True)
-                st.success(f"Kayıt Tamam: {s_sinif} sınıfına {skor} puan verildi.")
-                st.balloons()
-
-# --- YÖNETİCİ SAYFASI (Butonlu Giriş) ---
-elif sayfa == "📊 Yönetici Paneli":
-    st.title("📊 Yönetici Analiz Merkezi")
-    
-    with st.container(border=True):
-        y_u = st.text_input("Yönetici Kullanıcı Adı:", key="admin_user")
-        y_p = st.text_input("Yönetici Şifresi:", type="password", key="admin_pass")
-        yönetici_giris_btn = st.button("Yönetici Panelini Aç")
-    
-    if yönetici_giris_btn:
-        if y_u == YONETICI_USER and y_p == YONETICI_PASS:
-            st.session_state['admin_logged_in'] = True
-            st.success("🔓 Erişim Sağlandı!")
-        else:
-            st.error("❌ Yönetici Yetkisi Reddedildi!")
-            st.session_state['admin_logged_in'] = False
-
-    if st.session_state.get('admin_logged_in'):
-        df = st.session_state['veritabani']
-        if not df.empty:
-            df['Tarih'] = pd.to_datetime(df['Tarih'])
-            t1, t2 = st.tabs(["📊 HAFTALIK", "📈 AYLIK"])
-            with t1:
-                st.bar_chart(df.groupby("Sınıf")["Puan"].mean())
-                st.dataframe(df, use_container_width=True)
-            with t2:
-                st.line_chart(df.groupby("Tarih")["Puan"].mean())
-        else:
-            st.info("Henüz veri girişi yapılmamış.")
+        idx = siniflar.index(gelen_sinif) if gelen_sinif in siniflar
