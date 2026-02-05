@@ -73,19 +73,6 @@ if sayfa == "🏠 Ana Sayfa":
     * 📊 **Veri Odaklı Yaklaşım:** Dijital olmayan bir sistemde, hijyen sadece 'şans' eseridir. Biz şansı değil, veriyi temel alıyoruz.
     """)
 
-    st.write("---")
-    
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("#### 🧬 **Dijital İz**")
-        st.write("Her denetim saniyeler içinde arşive mühürlenir.")
-    with c2:
-        st.markdown("#### 📈 **Analitik Güç**")
-        st.write("Haftalık ve aylık verilerle okul yönetimi kolaylaşır.")
-    with c3:
-        st.markdown("#### 🛡️ **Tam Güvenlik**")
-        st.write("Denetçi ve Yönetici için ayrı şifreli giriş protokolü.")
-
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Ekranı")
@@ -126,22 +113,21 @@ elif sayfa == "📝 Denetçi Girişi":
                 zaten_var_mi = mevcut_df[(mevcut_df['Tarih'] == s_tarih) & (mevcut_df['Sınıf'] == s_sinif)]
                 
                 if not zaten_var_mi.empty:
-                    st.error(f"❌ HATA: {s_sinif} sınıfı için bu tarihte zaten bir kayıt var! Günde tek giriş hakkınız bulunmaktadır.")
+                    st.error(f"❌ HATA: {s_sinif} sınıfı için bu tarihte zaten bir kayıt var!")
                 else:
                     puan = sum([k1, k2, k3, k4, k5]) * 20
                     yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
                     veri_kaydet(yeni)
-                    st.success(f"✅ Başarılı! {s_sinif} için {puan} puan arşive kaydedildi.")
+                    st.success(f"✅ Başarılı! {s_sinif} için {puan} puan kaydedildi.")
                     st.balloons()
 
-# --- YÖNETİCİ SAYFASI (PASTA GRAFİKLİ) ---
+# --- YÖNETİCİ SAYFASI ---
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
 
     if not st.session_state['admin_onayli']:
         with st.container(border=True):
-            st.subheader("🔐 Yönetici Girişi")
             y_u = st.text_input("Yönetici Adı:", key="y_u")
             y_p = st.text_input("Yönetici Şifresi:", type="password", key="y_p")
             if st.button("Paneli Kilidini Aç"):
@@ -160,29 +146,39 @@ elif sayfa == "📊 Yönetici Paneli":
             df_filter = df.copy()
             df_filter['Tarih'] = pd.to_datetime(df_filter['Tarih']).dt.date
             
+            # --- GRAFİKLER ---
             tab_h, tab_a = st.tabs(["📅 Haftalık Analiz", "📈 Aylık Trend"])
-            
             with tab_h:
-                h_limit = (guncel_an - timedelta(days=7)).date()
-                h_df = df_filter[df_filter['Tarih'] >= h_limit]
+                h_df = df_filter[df_filter['Tarih'] >= (guncel_an - timedelta(days=7)).date()]
                 if not h_df.empty:
-                    # Toplam puana göre pasta grafiği
-                    h_sum = h_df.groupby("Sınıf")["Puan"].sum().reset_index()
-                    fig_h = px.pie(h_sum, values='Puan', names='Sınıf', hole=0.4,
-                                 title="Haftalık Sınıf Puan Dağılımı (En çok puan alan en büyük dilim)")
+                    fig_h = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Haftalık Hijyen Dağılımı")
                     st.plotly_chart(fig_h, use_container_width=True)
-                else: st.info("Haftalık veri bulunmuyor.")
-
             with tab_a:
-                a_limit = (guncel_an - timedelta(days=30)).date()
-                a_df = df_filter[df_filter['Tarih'] >= a_limit]
+                a_df = df_filter[df_filter['Tarih'] >= (guncel_an - timedelta(days=30)).date()]
                 if not a_df.empty:
-                    a_sum = a_df.groupby("Sınıf")["Puan"].sum().reset_index()
-                    fig_a = px.pie(a_sum, values='Puan', names='Sınıf', hole=0.4,
-                                 title="Aylık Sınıf Puan Dağılımı (En çok puan alan en büyük dilim)")
+                    fig_a = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Aylık Hijyen Dağılımı")
                     st.plotly_chart(fig_a, use_container_width=True)
-                else: st.info("Aylık veri bulunmuyor.")
+
+            # --- SINIFLARI AYRI AYRI GÖSTEREN ARŞİV ---
+            st.divider()
+            st.subheader("📂 Sınıf Bazlı Detaylı Denetim Arşivi")
             
-            st.write("### 📂 Dijital Denetim Arşivi")
-            st.dataframe(df, use_container_width=True)
-        else: st.info("Sistemde henüz kayıtlı veri bulunmuyor.")
+            # Benzersiz sınıfları al ve sırala
+            mevcut_siniflar = sorted(df['Sınıf'].unique())
+            
+            # Sınıfları yan yana veya alt alta göstermek için genişletilebilir kutular (expander) kullanalım
+            for sinif in mevcut_siniflar:
+                with st.expander(f"🏫 {sinif} Sınıfı Hijyen Geçmişi"):
+                    sinif_df = df[df['Sınıf'] == sinif].sort_values(by="Tarih", ascending=False)
+                    
+                    # Sınıfa özel özet bilgi
+                    ortalama = sinif_df['Puan'].mean()
+                    kayit_sayisi = len(sinif_df)
+                    
+                    c1, c2 = st.columns(2)
+                    c1.metric("Ortalama Puan", f"{ortalama:.1f}")
+                    c2.metric("Toplam Denetim", kayit_sayisi)
+                    
+                    st.table(sinif_df[["Tarih", "Puan", "Yetkili"]])
+        else:
+            st.info("Sistemde henüz kayıtlı veri bulunmuyor.")
