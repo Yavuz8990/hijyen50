@@ -80,4 +80,66 @@ elif sayfa == "🧼 Denetçi Girişi":
             st.session_state['denetci_onayli'] = False
             st.rerun()
         st.divider()
-        siniflar = ["9
+        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
+        s_sinif = st.selectbox("🎯 Hedef Sınıf:", siniflar)
+        s_tarih = st.date_input("📅 Tarih:", guncel_an)
+
+        with st.form("puanlama_formu"):
+            st.subheader("🫧 Hijyen Denetim Kriterleri")
+            k1 = st.checkbox("🧼 1. Havalandırma Durumu")
+            k2 = st.checkbox("🧼 2. Sıra/Masa Temizliği")
+            k3 = st.checkbox("🧼 3. Zemin ve Köşeler")
+            k4 = st.checkbox("🧼 4. Çöp Kutusu Düzeni")
+            k5 = st.checkbox("🧼 5. Genel Tertip")
+            if st.form_submit_button("✨ ONAYLA VE KAYDET"):
+                puan = sum([k1, k2, k3, k4, k5]) * 20
+                yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
+                veri_kaydet(yeni)
+                st.success(f"✨ Harika! {s_sinif} için hijyen verileri mühürlendi.")
+                st.balloons()
+
+# --- YÖNETİCİ SAYFASI ---
+elif sayfa == "📈 Yönetici Paneli":
+    st.title("📈 Yönetici Analiz Paneli")
+    if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
+
+    if not st.session_state['admin_onayli']:
+        with st.container(border=True):
+            y_u = st.text_input("Yönetici Adı:", key="y_u")
+            y_p = st.text_input("Yönetici Şifresi:", type="password", key="y_p")
+            if st.button("📈 Paneli Aç"):
+                if y_u == YONETICI_USER and y_p == YONETICI_PASS:
+                    st.session_state['admin_onayli'] = True
+                    st.rerun()
+                else: st.error("❌ Yetkisiz Giriş!")
+    else:
+        st.success("✨ Yönetici Erişimi Aktif.")
+        if st.button("🏃 Oturumu Kapat"):
+            st.session_state['admin_onayli'] = False
+            st.rerun()
+
+        df = verileri_yukle()
+        if not df.empty:
+            df['Tarih'] = pd.to_datetime(df['Tarih'])
+            tab_h, tab_a = st.tabs(["📊 HAFTALIK", "📉 AYLIK"])
+            
+            with tab_h:
+                h_limit = (guncel_an - timedelta(days=7)).date()
+                h_df = df[df['Tarih'].dt.date >= h_limit]
+                if not h_df.empty:
+                    h_chart_data = h_df.groupby("Sınıf")["Puan"].mean().reset_index()
+                    fig_h = px.bar(h_chart_data, x='Sınıf', y='Puan', title="Sınıf Hijyen Ortalamaları", color='Puan', color_continuous_scale='Blues')
+                    st.plotly_chart(fig_h, use_container_width=True)
+                else: st.info("Haftalık veri yok.")
+
+            with tab_a:
+                a_limit = (guncel_an - timedelta(days=30)).date()
+                a_df = df[df['Tarih'].dt.date >= a_limit]
+                if not a_df.empty:
+                    a_chart_data = a_df.groupby("Sınıf")["Puan"].mean().reset_index()
+                    fig_a = px.bar(a_chart_data, x='Sınıf', y='Puan', title="Aylık Hijyen Trendi", color='Puan', color_continuous_scale='GnBu')
+                    st.plotly_chart(fig_a, use_container_width=True)
+                else: st.info("Aylık veri yok.")
+            
+            st.write("### 📄 Hijyen Arşivi")
+            st.dataframe(df, use_container_width=True)
