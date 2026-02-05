@@ -26,19 +26,28 @@ sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Gir
 
 # --- 6. SAYFA İÇERİKLERİ ---
 
-# --- ANA SAYFA (Afişli) ---
+# --- ANA SAYFA (Yeni Düzen) ---
 if sayfa == "🏠 Ana Sayfa":
     st.title("🚀 Hijyen 5.0: Dijital Okul Projesi")
+    st.info("💡 Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
+    
+    st.write("---")
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
+            # Afişi ana sayfada ortalı şekilde gösterir
             st.image("afis.jpg", use_container_width=True, caption="Okulumuzun Hijyen Rehberi")
         except:
             st.warning("⚠️ Afiş görseli (afis.jpg) GitHub'a yüklenmediği için gösterilemiyor.")
 
     st.write("---")
-    st.info("Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
+    st.markdown("""
+    ### 🌟 Sistem Özellikleri
+    * **Güvenli Denetim:** Sadece yetkili denetçiler tarafından şifreli giriş.
+    * **Anlık Raporlama:** Verilerin anında dijital arşive işlenmesi.
+    * **Gelişmiş Analiz:** İdare için haftalık ve aylık performans grafikleri.
+    """)
 
 # --- DENETÇİ SAYFASI (Giriş Korumalı) ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -57,23 +66,3 @@ elif sayfa == "📝 Denetçi Girişi":
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         
         # QR Kod Parametresi
-        query_params = st.query_params
-        gelen_sinif = query_params.get("sinif", None)
-        idx = siniflar.index(gelen_sinif) if gelen_sinif in siniflar else 0
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            s_sinif = st.selectbox("Sınıf Seçin:", siniflar, index=idx)
-        with c2:
-            s_tarih = st.date_input("Tarih:", guncel_an)
-
-        with st.form("puanlama_formu"):
-            m = [st.checkbox(f"Kriter {i+1} (20 Puan)") for i in range(5)]
-            if st.form_submit_button("PUANI SİSTEME MÜHÜRLER"):
-                skor = sum(m) * 20
-                yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": skor, "Yetkili": d_u}])
-                st.session_state['veritabani'] = pd.concat([st.session_state['veritabani'], yeni], ignore_index=True)
-                st.success(f"Kayıt Tamam: {s_sinif} sınıfına {skor} puan verildi.")
-                st.balloons()
-    elif d_u != "" or d_p != "":
-        st.error("❌ Hatalı Denetçi Bilgileri!")
