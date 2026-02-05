@@ -67,4 +67,67 @@ elif sayfa == "📝 Denetçi Girişi":
             st.rerun()
 
         st.divider()
-        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "
+        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
+        
+        # URL'den sınıf yakalama
+        query_params = st.query_params
+        gelen_sinif = query_params.get("sinif", None)
+        idx = siniflar.index(gelen_sinif) if gelen_sinif in siniflar else 0
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            s_sinif = st.selectbox("Sınıf Seçin:", siniflar, index=idx)
+        with c2:
+            s_tarih = st.date_input("Tarih:", guncel_an)
+
+        with st.form("puanlama_formu"):
+            st.subheader("📋 5 Maddelik Hijyen Kontrolü")
+            m1 = st.checkbox("1. Havalandırma Durumu")
+            m2 = st.checkbox("2. Sıra ve Masa Temizliği")
+            m3 = st.checkbox("3. Zemin ve Köşelerin Hijyeni")
+            m4 = st.checkbox("4. Çöp Kutusu ve Atık Yönetimi")
+            m5 = st.checkbox("5. Sınıf Genel Düzeni")
+            
+            if st.form_submit_button("ONAYLA VE VERİYİ MÜHÜRLE"):
+                skor = sum([m1, m2, m3, m4, m5]) * 20
+                yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": skor, "Yetkili": DENETCI_USER}])
+                st.session_state['veritabani'] = pd.concat([st.session_state['veritabani'], yeni], ignore_index=True)
+                st.success(f"Kayıt Tamam: {s_sinif} sınıfına {skor} puan verildi.")
+                st.balloons()
+
+# --- YÖNETİCİ SAYFASI ---
+elif sayfa == "📊 Yönetici Paneli":
+    st.title("📊 Yönetici Analiz Merkezi")
+    
+    if 'admin_onayli' not in st.session_state:
+        st.session_state['admin_onayli'] = False
+
+    if not st.session_state['admin_onayli']:
+        with st.container(border=True):
+            y_u = st.text_input("Yönetici Kullanıcı Adı:", key="y_u")
+            y_p = st.text_input("Yönetici Şifresi:", type="password", key="y_p")
+            if st.button("Yönetici Panelini Aç"):
+                if y_u == YONETICI_USER and y_p == YONETICI_PASS:
+                    st.session_state['admin_onayli'] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Yetkisiz Erişim!")
+    else:
+        st.success("🔓 Yönetici Erişimi Onaylandı.")
+        if st.button("Yönetici Oturumunu Kapat"):
+            st.session_state['admin_onayli'] = False
+            st.rerun()
+
+        df = st.session_state['veritabani']
+        if not df.empty:
+            df['Tarih'] = pd.to_datetime(df['Tarih'])
+            
+            # Pasta Grafiği Hazırlığı
+            pasta_df = df.groupby("Sınıf")["Puan"].sum().reset_index()
+            fig = px.pie(pasta_df, values='Puan', names='Sınıf', 
+                         title='Okul Hijyen Puan Dağılımı', hole=0.3)
+            
+            st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("Henüz analiz edilecek veri girişi yapılmamış.")
