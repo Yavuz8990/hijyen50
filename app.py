@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import pytz
 import plotly.express as px
 
-# --- 1. YETKİ VE GÜVENLİK ---
+# --- 1. YETKİ TANIMLAMALARI ---
 DENETCI_USER = "admin"
 DENETCI_PASS = "Opet2026"
 YONETICI_USER = "mudur"
@@ -22,56 +22,56 @@ if 'veritabani' not in st.session_state:
     st.session_state['veritabani'] = pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
 # --- 5. YAN MENÜ ---
-st.sidebar.title("🧼 Hijyen 5.0 Navigasyon")
+st.sidebar.title("🧼 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"])
 
 # --- 6. SAYFA İÇERİKLERİ ---
 
-# --- ANA SAYFA (TAM İSTEDİĞİN TASARIM) ---
+# --- ANA SAYFA (BAŞLIK VE SLOGAN GÜNCELLENDİ) ---
 if sayfa == "🏠 Ana Sayfa":
-    # HTML ile Başlık ve Slogan Senkronizasyonu
+    # HTML ile Özel Başlık ve Slogan Tasarımı
     st.markdown("""
-        <div style="text-align: center; padding: 20px; background: rgba(0, 210, 255, 0.05); border-radius: 20px; border: 1px solid rgba(0, 210, 255, 0.1);">
-            <h1 style="font-family: 'Arial Black', sans-serif; color: #00D2FF; font-size: 75px; margin-bottom: 0px; text-shadow: 0px 0px 15px rgba(0,210,255,0.6);">
+        <div style="text-align: center; padding: 10px;">
+            <h1 style="font-family: 'Arial Black', sans-serif; color: #00D2FF; font-size: 60px; margin-bottom: 0px; text-shadow: 2px 2px 10px rgba(0,210,255,0.5);">
                 HİJYEN 5.0
             </h1>
-            <p style="font-family: 'Courier New', Courier, monospace; color: #FFFFFF; font-size: 26px; font-weight: bold; letter-spacing: 6px; margin-top: -10px; opacity: 0.9;">
+            <h2 style="font-family: 'Trebuchet MS', sans-serif; color: #FFFFFF; font-size: 28px; font-weight: normal; letter-spacing: 4px; margin-top: 0px; opacity: 0.9;">
                 GELECEĞİN TEMİZ OKULU
-            </p>
+            </h2>
         </div>
     """, unsafe_allow_html=True)
 
-    st.write("") # Boşluk
-    st.info("💡 **DİJİTAL REHBER:** Denetim raporu girişi veya analiz takibi için lütfen sol menüyü kullanın.")
+    st.info("💡 **SİSTEM MESAJI:** Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
     
     st.write("---")
     
-    # Afiş Bölümü
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
-            st.image("afis.jpg", use_container_width=True, caption="Okulumuzun Dijital Hijyen Standartları")
+            st.image("afis.jpg", use_container_width=True, caption="H5.0 Dijital Dönüşüm Stratejisi")
         except:
-            st.warning("⚠️ Afiş görseli (afis.jpg) henüz GitHub'a yüklenmemiş.")
+            st.warning("⚠️ `afis.jpg` dosyası GitHub'da bulunamadı.")
 
     st.write("---")
     
-    # Teknolojik Özellik Kartları
+    # Bilgi Kartları
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("### 🧬 **Veri Mühürleme**")
-        st.write("Denetimler geri dönülemez şekilde dijital arşive kaydedilir.")
+        st.markdown("#### 🧬 **Dijital İz**")
+        st.write("Her denetim saniyeler içinde arşive mühürlenir.")
     with c2:
-        st.markdown("### 📊 **Anlık Analiz**")
-        st.write("Pasta grafikleri ile okulun hijyen payı saniyeler içinde hesaplanır.")
+        st.markdown("#### 📊 **Analitik Güç**")
+        st.write("Haftalık ve aylık verilerle okul yönetimi kolaylaşır.")
     with c3:
-        st.markdown("### 🛡️ **Hiyerarşik Güvenlik**")
-        st.write("Denetçi ve Yönetici için ayrıştırılmış özel erişim kapıları.")
+        st.markdown("#### 🛡️ **Maksimum Güvenlik**")
+        st.write("Denetçi ve Yönetici için ayrı şifreli giriş protokolü.")
 
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
-    st.title("📝 Denetçi Yetki Girişi")
-    if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
+    st.title("📝 Denetçi Giriş Paneli")
+    
+    if 'denetci_onayli' not in st.session_state:
+        st.session_state['denetci_onayli'] = False
 
     if not st.session_state['denetci_onayli']:
         with st.container(border=True):
@@ -81,46 +81,53 @@ elif sayfa == "📝 Denetçi Girişi":
                 if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
-                else: st.error("Hatalı Giriş!")
+                else:
+                    st.error("❌ Geçersiz Denetçi Bilgileri!")
     else:
-        st.success(f"Hoş geldiniz, {DENETCI_USER}. Lütfen puanlama yapın.")
-        if st.button("Güvenli Çıkış"):
+        st.success(f"✅ Oturum Açıldı: {DENETCI_USER}")
+        if st.button("Çıkış Yap"):
             st.session_state['denetci_onayli'] = False
             st.rerun()
-        
+
         st.divider()
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         s_sinif = st.selectbox("Sınıf Seçiniz:", siniflar)
-        s_tarih = st.date_input("Tarih:", guncel_an)
+        s_tarih = st.date_input("Denetim Tarihi:", guncel_an)
 
-        with st.form("puan_formu"):
-            k1 = st.checkbox("1. Havalandırma")
-            k2 = st.checkbox("2. Sıra/Masa")
-            k3 = st.checkbox("3. Zemin Hijyeni")
-            k4 = st.checkbox("4. Çöp Kutusu")
-            k5 = st.checkbox("5. Genel Düzen")
-            if st.form_submit_button("VERİYİ KAYDET"):
+        with st.form("puanlama_formu"):
+            st.subheader("📋 Hijyen Kriterleri")
+            k1 = st.checkbox("1. Havalandırma Durumu")
+            k2 = st.checkbox("2. Sıra/Masa Temizliği")
+            k3 = st.checkbox("3. Zemin ve Köşeler")
+            k4 = st.checkbox("4. Çöp Kutusu Düzeni")
+            k5 = st.checkbox("5. Genel Tertip")
+            
+            if st.form_submit_button("ONAYLA VE GÖNDER"):
                 puan = sum([k1, k2, k3, k4, k5]) * 20
                 yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
                 st.session_state['veritabani'] = pd.concat([st.session_state['veritabani'], yeni], ignore_index=True)
-                st.success(f"Kaydedildi: {s_sinif} -> {puan} Puan")
+                st.success(f"Kayıt Başarılı! {s_sinif}: {puan} Puan.")
+                st.balloons()
 
 # --- YÖNETİCİ SAYFASI ---
 elif sayfa == "📊 Yönetici Paneli":
-    st.title("📊 Yönetici Analiz Merkezi")
-    if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
+    st.title("📊 Yönetici Analiz Paneli")
+    
+    if 'admin_onayli' not in st.session_state:
+        st.session_state['admin_onayli'] = False
 
     if not st.session_state['admin_onayli']:
         with st.container(border=True):
             y_u = st.text_input("Yönetici Adı:", key="y_u")
-            y_p = st.text_input("Şifre:", type="password", key="y_p")
-            if st.button("Paneli Aç"):
+            y_p = st.text_input("Yönetici Şifresi:", type="password", key="y_p")
+            if st.button("Sistemi Aç"):
                 if y_u == YONETICI_USER and y_p == YONETICI_PASS:
                     st.session_state['admin_onayli'] = True
                     st.rerun()
-                else: st.error("Yetkisiz Erişim!")
+                else:
+                    st.error("❌ Yetkisiz Giriş!")
     else:
-        st.success("Yönetici Erişimi Onaylandı.")
+        st.success("🔓 Yönetici Erişimi Onaylandı.")
         if st.button("Oturumu Kapat"):
             st.session_state['admin_onayli'] = False
             st.rerun()
@@ -128,15 +135,20 @@ elif sayfa == "📊 Yönetici Paneli":
         df = st.session_state['veritabani'].copy()
         if not df.empty:
             df['Tarih'] = pd.to_datetime(df['Tarih'])
-            t_h, t_a = st.tabs(["📊 HAFTALIK", "📈 AYLIK"])
-            with t_h:
-                h_df = df[df['Tarih'].dt.date >= (guncel_an - timedelta(days=7)).date()]
+            tab_h, tab_a = st.tabs(["📊 HAFTALIK", "📈 AYLIK"])
+            
+            with tab_h:
+                h_limit = (guncel_an - timedelta(days=7)).date()
+                h_df = df[df['Tarih'].dt.date >= h_limit]
                 if not h_df.empty:
-                    fig = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Tüm Sınıfların Haftalık Dağılımı")
-                    st.plotly_chart(fig, use_container_width=True)
-            with t_a:
-                a_df = df[df['Tarih'].dt.date >= (guncel_an - timedelta(days=30)).date()]
+                    fig_h = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Tüm Sınıfların Haftalık Dağılımı")
+                    st.plotly_chart(fig_h, use_container_width=True)
+                else: st.info("Haftalık veri yok.")
+
+            with tab_a:
+                a_limit = (guncel_an - timedelta(days=30)).date()
+                a_df = df[df['Tarih'].dt.date >= a_limit]
                 if not a_df.empty:
-                    fig2 = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Tüm Sınıfların Aylık Dağılımı")
-                    st.plotly_chart(fig2, use_container_width=True)
-        else: st.info("Kayıt bulunamadı.")
+                    fig_a = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Tüm Sınıfların Aylık Dağılımı")
+                    st.plotly_chart(fig_a, use_container_width=True)
+                else: st.info("Aylık veri yok.")
