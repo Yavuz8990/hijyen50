@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta
 import pytz
-import plotly.express as px
+import plotly.graph_objects as go
 
 # --- 1. YETKİ VE DOSYA AYARLARI ---
 DENETCI_USER = "admin"
@@ -12,14 +12,14 @@ YONETICI_USER = "mudur"
 YONETICI_PASS = "Hijyen2026"
 DB_FILE = "denetimler.csv"
 
-# --- 2. SAYFA AYARLARI (İstediğin gibi sadece burası Sabun 🧼) ---
+# --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
 # --- 3. TÜRKİYE SAATİ ---
 tr_timezone = pytz.timezone('Europe/Istanbul')
 guncel_an = datetime.now(tr_timezone)
 
-# --- 4. VERİ SİSTEMİ ---
+# --- 4. VERİ SİSTEMİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
         return pd.read_csv(DB_FILE)
@@ -35,7 +35,7 @@ def veri_kaydet(yeni_veri):
 if 'veritabani' not in st.session_state:
     st.session_state['veritabani'] = verileri_yukle()
 
-# --- 5. YAN MENÜ (Anlamlarına Göre İkonlar) ---
+# --- 5. YAN MENÜ ---
 st.sidebar.title("💎 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"])
 
@@ -44,21 +44,25 @@ sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Gir
 # --- ANA SAYFA ---
 if sayfa == "🏠 Ana Sayfa":
     st.markdown("""
-        <div style="text-align: center; padding: 10px;">
-            <h1 style="font-family: 'Arial Black', sans-serif; color: #00D2FF; font-size: 60px; margin-bottom: 0px; text-shadow: 2px 2px 10px rgba(0,210,255,0.5);">
+        <div style="text-align: center; padding: 20px; background: rgba(0, 210, 255, 0.05); border-radius: 20px;">
+            <h1 style="font-family: 'Arial Black', sans-serif; color: #00D2FF; font-size: 65px; margin-bottom: 0px; text-shadow: 0px 0px 15px rgba(0,210,255,0.6);">
                 HİJYEN 5.0
             </h1>
-            <h2 style="font-family: 'Trebuchet MS', sans-serif; color: #FFFFFF; font-size: 28px; font-weight: normal; letter-spacing: 4px; margin-top: 0px; opacity: 0.9;">
+            <p style="font-family: 'Trebuchet MS', sans-serif; color: #FFFFFF; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin-top: -10px; opacity: 0.9;">
                 GELECEĞİN TEMİZ OKULU
-            </h2>
+            </p>
         </div>
     """, unsafe_allow_html=True)
+    
     st.info("💡 **BİLGİLENDİRME:** Lütfen sol menüden yetki seviyenize uygun giriş alanını seçiniz.")
     st.write("---")
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        try: st.image("afis.jpg", use_container_width=True)
-        except: st.warning("⚠️ `afis.jpg` dosyası bulunamadı.")
+        try:
+            st.image("afis.jpg", use_container_width=True, caption="Dijital Dönüşüm & Hijyen Standartları")
+        except:
+            st.warning("⚠️ `afis.jpg` bulunamadı. Lütfen GitHub'a yükleyin.")
 
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -74,20 +78,18 @@ elif sayfa == "📝 Denetçi Girişi":
                 if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
-                else: st.error("❌ Hatalı kullanıcı adı veya şifre!")
+                else: st.error("❌ Hatalı Denetçi Bilgileri!")
     else:
         st.success(f"🔓 Oturum Açıldı: {DENETCI_USER}")
         if st.button("🚪 Oturumu Kapat"):
             st.session_state['denetci_onayli'] = False
             st.rerun()
-        st.divider()
         
-        # Denetim Formu
+        st.divider()
+        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         col_s, col_t = st.columns(2)
-        with col_s:
-            s_sinif = st.selectbox("🏫 Denetlenecek Sınıf:", ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"])
-        with col_t:
-            s_tarih = st.date_input("📅 Denetim Tarihi:", guncel_an)
+        with col_s: s_sinif = st.selectbox("🏫 Denetlenecek Sınıf:", siniflar)
+        with col_t: s_tarih = st.date_input("📅 Denetim Tarihi:", guncel_an)
 
         with st.form("puanlama_formu"):
             st.subheader("📋 Hijyen Değerlendirme Maddeleri")
@@ -106,7 +108,7 @@ elif sayfa == "📝 Denetçi Girişi":
 
 # --- YÖNETİCİ SAYFASI ---
 elif sayfa == "📊 Yönetici Paneli":
-    st.title("📊 Yönetici Analiz Paneli")
+    st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
 
     if not st.session_state['admin_onayli']:
@@ -118,12 +120,27 @@ elif sayfa == "📊 Yönetici Paneli":
                 if y_u == YONETICI_USER and y_p == YONETICI_PASS:
                     st.session_state['admin_onayli'] = True
                     st.rerun()
-                else: st.error("❌ Yetkisiz Erişim Denemesi!")
+                else: st.error("❌ Yetkisiz Erişim!")
     else:
         st.success("🔓 Yönetim Paneline Erişim Onaylandı.")
         if st.button("🚪 Çıkış Yap"):
             st.session_state['admin_onayli'] = False
             st.rerun()
+
+        # Mum Grafiği Fonksiyonu
+        def ciz_teknolojik_mum(veri, baslik):
+            if veri.empty: return None
+            stats = veri.groupby("Sınıf")["Puan"].agg(['mean', 'max', 'min']).reset_index()
+            fig = go.Figure(data=[go.Candlestick(
+                x=stats['Sınıf'],
+                open=stats['mean'], high=stats['max'],
+                low=stats['min'], close=stats['mean'],
+                increasing_line_color='#00D2FF', decreasing_line_color='#00D2FF'
+            )])
+            fig.update_layout(title=baslik, template="plotly_dark", xaxis_rangeslider_visible=False,
+                            yaxis_title="Puan", plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color="#00D2FF"))
+            return fig
 
         df = verileri_yukle()
         if not df.empty:
@@ -131,24 +148,17 @@ elif sayfa == "📊 Yönetici Paneli":
             tab_h, tab_a = st.tabs(["📅 Haftalık Analiz", "📈 Aylık Trend"])
             
             with tab_h:
-                h_limit = (guncel_an - timedelta(days=7)).date()
-                h_df = df[df['Tarih'].dt.date >= h_limit]
-                if not h_df.empty:
-                    h_data = h_df.groupby("Sınıf")["Puan"].mean().reset_index()
-                    fig_h = px.bar(h_data, x='Sınıf', y='Puan', color='Puan', color_continuous_scale='Blues', text_auto='.1f')
-                    st.plotly_chart(fig_h, use_container_width=True)
-                else: st.info("Bu hafta için henüz kayıt bulunmuyor.")
+                h_df = df[df['Tarih'].dt.date >= (guncel_an - timedelta(days=7)).date()]
+                fig_h = ciz_teknolojik_mum(h_df, "Haftalık Sınıf Hijyen Endeksi")
+                if fig_h: st.plotly_chart(fig_h, use_container_width=True)
+                else: st.info("Haftalık veri yok.")
 
             with tab_a:
-                a_limit = (guncel_an - timedelta(days=30)).date()
-                a_df = df[df['Tarih'].dt.date >= a_limit]
-                if not a_df.empty:
-                    a_data = a_df.groupby("Sınıf")["Puan"].mean().reset_index()
-                    fig_a = px.bar(a_data, x='Sınıf', y='Puan', color='Puan', color_continuous_scale='GnBu', text_auto='.1f')
-                    st.plotly_chart(fig_a, use_container_width=True)
-                else: st.info("Son 30 gün için kayıt bulunmuyor.")
+                a_df = df[df['Tarih'].dt.date >= (guncel_an - timedelta(days=30)).date()]
+                fig_a = ciz_teknolojik_mum(a_df, "Aylık Hijyen Trend Analizi")
+                if fig_a: st.plotly_chart(fig_a, use_container_width=True)
+                else: st.info("Aylık veri yok.")
             
             st.write("### 📂 Dijital Denetim Arşivi")
             st.dataframe(df, use_container_width=True)
-        else:
-            st.info("Sistemde henüz kayıtlı veri bulunmuyor.")
+        else: st.info("Sistemde henüz kayıtlı veri bulunmuyor.")
