@@ -11,87 +11,83 @@ YONETICI_USER = "mudur"
 YONETICI_PASS = "Hijyen2026"
 
 # --- 2. SAYFA AYARLARI ---
-st.set_page_config(page_title="H5.0 Profesyonel Panel", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🛡️", layout="wide")
 
 # --- 3. TÜRKİYE SAATİ ---
 tr_timezone = pytz.timezone('Europe/Istanbul')
 guncel_an = datetime.now(tr_timezone)
 
-# --- 4. VERİTABANI SÜREKLİLİĞİ ---
-# Verilerin oturum boyunca silinmemesi için session_state kullanılır.
+# --- 4. VERİTABANI HAFIZASI ---
 if 'veritabani' not in st.session_state:
-    # Başlangıçta boş kalmaması için geçmişe dönük simüle edilmiş veriler
-    st.session_state['veritabani'] = pd.DataFrame([
-        {"Tarih": (guncel_an - timedelta(days=2)).date(), "Sınıf": "9A", "Puan": 100, "Yetkili": "admin"},
-        {"Tarih": (guncel_an - timedelta(days=10)).date(), "Sınıf": "10B", "Puan": 80, "Yetkili": "admin"},
-        {"Tarih": (guncel_an - timedelta(days=15)).date(), "Sınıf": "11C", "Puan": 60, "Yetkili": "admin"},
-        {"Tarih": (guncel_an - timedelta(days=1)).date(), "Sınıf": "12A", "Puan": 100, "Yetkili": "admin"}
-    ])
+    st.session_state['veritabani'] = pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
 # --- 5. YAN MENÜ ---
 st.sidebar.title("🧼 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"])
 
-# --- ANA SAYFA ---
-# --- ANA SAYFA TASARIMI (YENİ SLOGAN) ---
+# --- 6. SAYFA İÇERİKLERİ ---
+
+# --- ANA SAYFA (YENİ TEKNOLOJİK TASARIM) ---
 if sayfa == "🏠 Ana Sayfa":
-    # Teknolojik Başlık ve Stil Ayarları
+    # Google Fonts üzerinden teknoloji fontu çekme ve Stil Ayarları
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
         
-        .main-title {
+        .main-container {
             text-align: center;
+            padding: 20px;
+        }
+        .main-title {
             font-family: 'Orbitron', sans-serif;
             color: #00D2FF;
-            font-size: 42px;
+            font-size: 50px;
             font-weight: 700;
-            letter-spacing: 3px;
-            text-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
-            margin-top: 20px;
-            margin-bottom: 10px;
+            letter-spacing: 5px;
+            text-shadow: 0 0 15px rgba(0, 210, 255, 0.7), 0 0 30px rgba(0, 210, 255, 0.4);
+            margin-bottom: 5px;
         }
         .sub-title {
-            text-align: center;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Orbitron', sans-serif;
             color: #ffffff;
-            font-size: 18px;
-            letter-spacing: 1px;
-            opacity: 0.8;
-            margin-bottom: 40px;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            opacity: 0.9;
+            margin-bottom: 30px;
         }
         </style>
         
-        <div class="main-title">HİJYEN 5.0</div>
-        <div class="sub-title">GELECEĞİN TEMİZ OKULU</div>
+        <div class="main-container">
+            <div class="main-title">HİJYEN 5.0</div>
+            <div class="sub-title">GELECEĞİN TEMİZ OKULU</div>
+        </div>
     """, unsafe_allow_html=True)
 
-    # Bilgilendirme Kutusu
-    st.info("🚨 **SİSTEM ERİŞİMİ:** Lütfen soldaki menüden yetki seviyenize göre giriş yapınız.")
+    st.info("💡 **SİSTEM MESAJI:** Lütfen işlem yapmak için soldaki menüden yetki seviyenize göre giriş yapınız.")
     
     st.write("---")
     
-    # Afiş Görseli
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try:
             st.image("afis.jpg", use_container_width=True, caption="Dijital Dönüşüm & Hijyen Standartları")
         except:
-            st.warning("⚠️ `afis.jpg` bulunamadı. Lütfen GitHub deponuza yükleyin.")
+            st.warning("⚠️ `afis.jpg` dosyası GitHub dizininde bulunamadı.")
 
     st.write("---")
     
-    # Teknolojik Bilgi Kartları
+    # Alt Bilgi Kartları
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("### 🧬 **Akıllı Veri**")
-        st.write("Her denetim dijital bir imza ile kaydedilir.")
+        st.markdown("#### 🧬 **Veri Madenciliği**")
+        st.write("Okul hijyeni dijital verilere dönüşüyor.")
     with c2:
-        st.markdown("### 📈 **Gerçek Zamanlı**")
-        st.write("Haftalık ve aylık analizler anında güncellenir.")
+        st.markdown("#### 📈 **Analitik Takip**")
+        st.write("Haftalık ve aylık gelişim grafikleri.")
     with c3:
-        st.markdown("### 🛡️ **Tam Güvenlik**")
-        st.write("Çift kademeli admin/denetçi doğrulama sistemi.")
+        st.markdown("#### 🛡️ **Güvenli Erişim**")
+        st.write("Çift katmanlı yetkilendirme protokolü.")
 
 # --- DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -112,7 +108,7 @@ elif sayfa == "📝 Denetçi Girişi":
                     st.error("❌ Hatalı Giriş!")
     else:
         st.success(f"✅ Yetki Onaylandı: {DENETCI_USER}")
-        if st.button("Güvenli Çıkış"):
+        if st.button("Oturumu Kapat"):
             st.session_state['denetci_onayli'] = False
             st.rerun()
 
@@ -123,15 +119,15 @@ elif sayfa == "📝 Denetçi Girişi":
 
         with st.form("puanlama_formu"):
             st.subheader("📋 5 Maddelik Değerlendirme")
-            m = [st.checkbox(f"Kriter {i+1}") for i in range(5)]
+            m = [st.checkbox(k) for k in ["Havalandırma Durumu", "Sıra/Masa Temizliği", "Zemin Hijyeni", "Çöp Kutusu Düzeni", "Genel Tertip"]]
             if st.form_submit_button("VERİYİ KAYDET"):
                 skor = sum(m) * 20
                 yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": skor, "Yetkili": DENETCI_USER}])
                 st.session_state['veritabani'] = pd.concat([st.session_state['veritabani'], yeni], ignore_index=True)
-                st.success("Veri başarıyla arşive eklendi!")
+                st.success("Veri sisteme mühürlendi!")
                 st.balloons()
 
-# --- YÖNETİCİ SAYFASI (HAFTALIK/AYLIK AYRIMLI) ---
+# --- YÖNETİCİ SAYFASI ---
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     
@@ -150,44 +146,27 @@ elif sayfa == "📊 Yönetici Paneli":
                     st.error("❌ Yetkisiz Erişim!")
     else:
         st.success("🔓 Yönetici Erişimi Aktif")
-        if st.button("Oturumu Kapat"):
+        if st.button("Yönetici Çıkış"):
             st.session_state['admin_onayli'] = False
             st.rerun()
 
         df = st.session_state['veritabani'].copy()
-        df['Tarih'] = pd.to_datetime(df['Tarih'])
-        
-        tab_h, tab_a = st.tabs(["📅 Haftalık Analiz (Son 7 Gün)", "📆 Aylık Analiz (Son 30 Gün)"])
-
-        with tab_h:
-            st.subheader("Haftalık Tüm Sınıfların Hijyen Dağılımı")
-            h_limit = (guncel_an - timedelta(days=7)).date()
-            h_df = df[df['Tarih'].dt.date >= h_limit]
+        if not df.empty:
+            df['Tarih'] = pd.to_datetime(df['Tarih'])
+            t_h, t_a = st.tabs(["📅 HAFTALIK", "📆 AYLIK"])
             
-            if not h_df.empty:
-                h_sum = h_df.groupby("Sınıf")["Puan"].sum().reset_index()
-                fig_h = px.pie(h_sum, values='Puan', names='Sınıf', hole=0.4,
-                             title="Bu Hafta Tüm Sınıfların Puan Oranı",
-                             color_discrete_sequence=px.colors.qualitative.Pastel)
-                st.plotly_chart(fig_h, use_container_width=True)
-                st.dataframe(h_df, use_container_width=True)
-            else:
-                st.info("Bu hafta için henüz veri girişi yok.")
+            with t_h:
+                h_limit = (guncel_an - timedelta(days=7)).date()
+                h_df = df[df['Tarih'].dt.date >= h_limit]
+                if not h_df.empty:
+                    fig_h = px.pie(h_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Haftalık Sınıf Dağılımı")
+                    st.plotly_chart(fig_h, use_container_width=True)
+                else: st.info("Haftalık veri yok.")
 
-        with tab_a:
-            st.subheader("Aylık Tüm Sınıfların Hijyen Dağılımı")
-            a_limit = (guncel_an - timedelta(days=30)).date()
-            a_df = df[df['Tarih'].dt.date >= a_limit]
-            
-            if not a_df.empty:
-                a_sum = a_df.groupby("Sınıf")["Puan"].sum().reset_index()
-                fig_a = px.pie(a_sum, values='Puan', names='Sınıf', hole=0.4,
-                             title="Bu Ay Tüm Sınıfların Puan Oranı",
-                             color_discrete_sequence=px.colors.qualitative.Set3)
-                st.plotly_chart(fig_a, use_container_width=True)
-                st.dataframe(a_df, use_container_width=True)
-            else:
-                st.info("Bu ay için henüz veri girişi yok.")
-
-
-
+            with t_a:
+                a_limit = (guncel_an - timedelta(days=30)).date()
+                a_df = df[df['Tarih'].dt.date >= a_limit]
+                if not a_df.empty:
+                    fig_a = px.pie(a_df.groupby("Sınıf")["Puan"].sum().reset_index(), values='Puan', names='Sınıf', hole=0.4, title="Aylık Sınıf Dağılımı")
+                    st.plotly_chart(fig_a, use_container_width=True)
+                else: st.info("Aylık veri yok.")
