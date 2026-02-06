@@ -38,7 +38,7 @@ if 'veritabani' not in st.session_state:
 
 # --- 5. ŞAMPİYON HESAPLAMA FONKSİYONU ---
 def sampiyon_bul_text(veri):
-    if veri.empty: return "Henüz veri yok"
+    if veri.empty: return "Veri bekleniyor..."
     skorlar = veri.groupby("Sınıf")["Puan"].mean()
     en_yuksek = skorlar.max()
     sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
@@ -67,34 +67,25 @@ if sayfa == "🏠 Ana Sayfa":
         </div>
     """, unsafe_allow_html=True)
 
-    # --- ŞAMPİYONLAR KÜRSÜSÜ (YENİ) ---
+    # --- ŞAMPİYONLAR KÜRSÜSÜ (GÜNLÜK KALDIRILDI) ---
     st.write("")
-    c1, c2, c3 = st.columns(3)
+    c1, c2 = st.columns(2)
     
     with c1:
-        g_df = df_genel[df_genel['Tarih'] == bugun]
+        h_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=7))]
         st.markdown(f"""
-            <div style="text-align: center; padding: 15px; border: 2px solid #FFD700; border-radius: 15px; background: rgba(255, 215, 0, 0.1);">
-                <h3 style="color: #FFD700; margin: 0;">🥇 GÜNÜN LİDERİ</h3>
-                <p style="font-size: 20px; font-weight: bold; color: white; margin-top: 10px;">{sampiyon_bul_text(g_df)}</p>
+            <div style="text-align: center; padding: 25px; border: 3px solid #C0C0C0; border-radius: 20px; background: rgba(192, 192, 192, 0.1);">
+                <h2 style="color: #C0C0C0; margin: 0; font-size: 28px;">🥈 HAFTANIN EN TEMİZİ</h2>
+                <p style="font-size: 24px; font-weight: bold; color: white; margin-top: 15px;">{sampiyon_bul_text(h_df)}</p>
             </div>
         """, unsafe_allow_html=True)
 
     with c2:
-        h_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=7))]
-        st.markdown(f"""
-            <div style="text-align: center; padding: 15px; border: 2px solid #C0C0C0; border-radius: 15px; background: rgba(192, 192, 192, 0.1);">
-                <h3 style="color: #C0C0C0; margin: 0;">🥈 HAFTANIN EN TEMİZİ</h3>
-                <p style="font-size: 20px; font-weight: bold; color: white; margin-top: 10px;">{sampiyon_bul_text(h_df)}</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with c3:
         a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
         st.markdown(f"""
-            <div style="text-align: center; padding: 15px; border: 2px solid #CD7F32; border-radius: 15px; background: rgba(205, 127, 50, 0.1);">
-                <h3 style="color: #CD7F32; margin: 0;">🥉 AYIN ŞAMPİYONU</h3>
-                <p style="font-size: 20px; font-weight: bold; color: white; margin-top: 10px;">{sampiyon_bul_text(a_df)}</p>
+            <div style="text-align: center; padding: 25px; border: 3px solid #CD7F32; border-radius: 15px; background: rgba(205, 127, 50, 0.1);">
+                <h2 style="color: #CD7F32; margin: 0; font-size: 28px;">🥉 AYIN ŞAMPİYONU</h2>
+                <p style="font-size: 24px; font-weight: bold; color: white; margin-top: 15px;">{sampiyon_bul_text(a_df)}</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -126,11 +117,10 @@ if sayfa == "🏠 Ana Sayfa":
         try: st.image("afis.jpg", use_container_width=True)
         except: st.warning("⚠️ `afis.jpg` bulunamadı.")
 
-# --- 📝 DENETÇİ SAYFASI ---
+# --- DENETÇİ VE YÖNETİCİ SAYFALARI (Önceki kararlı sürümle aynı) ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
-
     if not st.session_state['denetci_onayli']:
         with st.container(border=True):
             d_u = st.text_input("Kullanıcı Adı:", key="d_u")
@@ -167,22 +157,19 @@ elif sayfa == "📝 Denetçi Girişi":
             st.session_state['denetci_onayli'] = False
             st.rerun()
 
-# --- 📊 YÖNETİCİ PANELİ ---
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
-
     if not st.session_state['admin_onayli']:
         with st.container(border=True):
             y_u = st.text_input("Yönetici Adı:", key="y_u")
             y_p = st.text_input("Şifre:", type="password", key="y_p")
-            if st.button("Paneli Kilidini Aç"):
+            if st.button("Giriş"):
                 if y_u == YONETICI_USER and y_p == YONETICI_PASS:
                     st.session_state['admin_onayli'] = True
                     st.rerun()
-                else: st.error("❌ Yetkisiz Erişim!")
+                else: st.error("❌ Hatalı!")
     else:
-        st.success("🔓 Yönetim Paneli Aktif.")
         df = verileri_yukle()
         if not df.empty:
             tab_g, tab_h, tab_a = st.tabs(["📌 Günlük", "📅 Haftalık", "📈 Aylık"])
@@ -201,6 +188,6 @@ elif sayfa == "📊 Yönetici Paneli":
                         if c2.button("Sil", key=f"del_{sinif}_{idx}"):
                             veri_listesini_guncelle(df.drop(idx))
                             st.rerun()
-        if st.button("🚪 Güvenli Çıkış"):
+        if st.button("🚪 Çıkış"):
             st.session_state['admin_onayli'] = False
             st.rerun()
