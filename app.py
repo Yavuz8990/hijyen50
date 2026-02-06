@@ -36,11 +36,21 @@ def veri_listesini_guncelle(df):
 if 'veritabani' not in st.session_state:
     st.session_state['veritabani'] = verileri_yukle()
 
-# --- 5. YAN MENÜ ---
-st.sidebar.title("💎 Hijyen 5.0")
-sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"])
+# --- 5. QR KOD VE OTOMATİK YÖNLENDİRME MANTIĞI ---
+# URL'den sınıf bilgisini yakala
+query_params = st.query_params
+url_sinif = query_params.get("sinif", None)
 
-# --- 6. SAYFA İÇERİKLERİ ---
+# Eğer URL'den sınıf gelmişse, varsayılan sayfayı "Denetçi Girişi" yap
+default_index = 0
+if url_sinif:
+    default_index = 1 # Yan menüdeki 2. seçenek (Denetçi Girişi)
+
+# --- 6. YAN MENÜ ---
+st.sidebar.title("💎 Hijyen 5.0")
+sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"], index=default_index)
+
+# --- 7. SAYFA İÇERİKLERİ ---
 
 # --- ANA SAYFA ---
 if sayfa == "🏠 Ana Sayfa":
@@ -61,20 +71,25 @@ if sayfa == "🏠 Ana Sayfa":
         except: st.warning("⚠️ `afis.jpg` bulunamadı.")
     
     st.markdown("### 🎯 Proje Felsefesi")
-    st.markdown("* ✨ **Ölçülebilirlik:** Temizliği şansa değil, veriye dayandırıyoruz.\n* 📊 **Güvenlik:** Karekod doğrulaması ile yanlış veri girişini engelliyoruz.")
+    st.markdown("""
+    * ✨ **Ölçülebilirlik:** Temizliği şansa değil, veriye dayandırıyoruz.
+    * 📱 **QR Doğrulama:** Fiziksel doğrulama ile yanlış sınıf seçimini engelliyoruz.
+    """)
 
-# --- 📝 DENETÇİ SAYFASI (KAREKOD KİLİTLİ) ---
+# --- 📝 DENETÇİ SAYFASI (QR YÖNLENDİRMELİ VE KİLİTLİ) ---
 elif sayfa == "📝 Denetçi Girişi":
-    st.title("📝 Denetçi Kayıt Ekranı")
-    
-    # URL'den sınıf bilgisini yakala
-    query_params = st.query_params
-    url_sinif = query_params.get("sinif", None)
+    st.title("📝 Denetçi Kayıt Paneli")
     
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
 
+    # GİRİŞ YAPILMAMIŞSA
     if not st.session_state['denetci_onayli']:
         with st.container(border=True):
+            if url_sinif:
+                st.success(f"📱 **QR Okutuldu:** {url_sinif} sınıfı için giriş yapınız.")
+            else:
+                st.warning("⚠️ Lütfen denetim yapmak için sınıf karekodunu okutunuz.")
+            
             st.subheader("🔐 Yetkili Girişi")
             d_u = st.text_input("Kullanıcı Adı:", key="d_u")
             d_p = st.text_input("Şifre:", type="password", key="d_p")
@@ -83,21 +98,23 @@ elif sayfa == "📝 Denetçi Girişi":
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
                 else: st.error("❌ Hatalı Giriş!")
+    
+    # GİRİŞ YAPILMIŞSA
     else:
         st.success(f"🔓 Hoş geldiniz Yetkili: {DENETCI_USER}")
         
-        # KAREKOD KONTROLÜ
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         
+        # QR KOD KONTROLÜ
         if url_sinif and url_sinif in siniflar:
-            st.info(f"📍 Denetim Konumu: **{url_sinif}**")
+            st.info(f"📍 Denetim Konumu Doğrulandı: **{url_sinif}**")
             
-            # Sınıf seçimi yerine sadece okunan sınıfı gösteriyoruz (Değiştirilemez)
+            # Sınıf bilgisini sabitliyoruz
             s_sinif = url_sinif
-            s_tarih = st.date_input("📅 Denetim Tarihi:", bugun, disabled=True)
-
+            
             with st.form("puanlama_formu"):
-                st.subheader(f"📋 {s_sinif} Sınıfı Hijyen Formu")
+                st.subheader(f"📋 {s_sinif} Sınıfı Değerlendirme Formu")
+                st.write(f"📅 Tarih: {bugun}")
                 k1 = st.checkbox("💨 Havalandırma Durumu")
                 k2 = st.checkbox("🪑 Sıra ve Masa Temizliği")
                 k3 = st.checkbox("🧹 Zemin ve Köşelerin Hijyeni")
@@ -106,19 +123,19 @@ elif sayfa == "📝 Denetçi Girişi":
                 
                 if st.form_submit_button("💾 VERİYİ MÜHÜRLE"):
                     df = verileri_yukle()
-                    zaten_var_mi = df[(df['Tarih'] == s_tarih) & (df['Sınıf'] == s_sinif)]
+                    zaten_var_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == s_sinif)]
                     
                     if not zaten_var_mi.empty:
-                        st.error(f"❌ Bu sınıf için bugün zaten kayıt yapılmış!")
+                        st.error(f"❌ HATA: {s_sinif} için bugün zaten kayıt yapılmış!")
                     else:
                         puan = sum([k1, k2, k3, k4, k5]) * 20
-                        yeni = pd.DataFrame([{"Tarih": s_tarih, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
+                        yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
                         veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
                         st.success(f"✅ Başarılı! {s_sinif} verisi kaydedildi.")
                         st.balloons()
         else:
-            st.warning("⚠️ **DİKKAT:** Lütfen denetim yapmak istediğiniz sınıfın kapısındaki karekodu okutunuz.")
-            st.write("Sistem, fiziksel karekod doğrulaması olmadan değerlendirme yapmanıza izin vermez.")
+            st.error("⚠️ **KAREKOD BULUNAMADI!**")
+            st.write("Lütfen denetim yapmak istediğiniz sınıfın kapısındaki karekodu okutarak bu sayfaya geliniz.")
 
         if st.button("🚪 Oturumu Kapat"):
             st.session_state['denetci_onayli'] = False
