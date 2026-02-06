@@ -36,15 +36,10 @@ def veri_listesini_guncelle(df):
 if 'veritabani' not in st.session_state:
     st.session_state['veritabani'] = verileri_yukle()
 
-# --- 5. QR KOD VE OTOMATİK YÖNLENDİRME MANTIĞI ---
-# URL'den sınıf bilgisini yakala
+# --- 5. QR KOD KONTROLÜ ---
 query_params = st.query_params
 url_sinif = query_params.get("sinif", None)
-
-# Eğer URL'den sınıf gelmişse, varsayılan sayfayı "Denetçi Girişi" yap
-default_index = 0
-if url_sinif:
-    default_index = 1 # Yan menüdeki 2. seçenek (Denetçi Girişi)
+default_index = 1 if url_sinif else 0
 
 # --- 6. YAN MENÜ ---
 st.sidebar.title("💎 Hijyen 5.0")
@@ -52,7 +47,6 @@ sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Gir
 
 # --- 7. SAYFA İÇERİKLERİ ---
 
-# --- ANA SAYFA ---
 if sayfa == "🏠 Ana Sayfa":
     st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(0, 210, 255, 0.05); border-radius: 20px;">
@@ -69,79 +63,50 @@ if sayfa == "🏠 Ana Sayfa":
     with col2:
         try: st.image("afis.jpg", use_container_width=True)
         except: st.warning("⚠️ `afis.jpg` bulunamadı.")
-    
-    st.markdown("### 🎯 Proje Felsefesi")
-    st.markdown("""
-    * ✨ **Ölçülebilirlik:** Temizliği şansa değil, veriye dayandırıyoruz.
-    * 📱 **QR Doğrulama:** Fiziksel doğrulama ile yanlış sınıf seçimini engelliyoruz.
-    """)
 
-# --- 📝 DENETÇİ SAYFASI (QR YÖNLENDİRMELİ VE KİLİTLİ) ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
-    
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
 
-    # GİRİŞ YAPILMAMIŞSA
     if not st.session_state['denetci_onayli']:
         with st.container(border=True):
-            if url_sinif:
-                st.success(f"📱 **QR Okutuldu:** {url_sinif} sınıfı için giriş yapınız.")
-            else:
-                st.warning("⚠️ Lütfen denetim yapmak için sınıf karekodunu okutunuz.")
-            
-            st.subheader("🔐 Yetkili Girişi")
+            if url_sinif: st.success(f"📱 QR Okutuldu: {url_sinif}")
             d_u = st.text_input("Kullanıcı Adı:", key="d_u")
             d_p = st.text_input("Şifre:", type="password", key="d_p")
-            if st.button("Sisteme Giriş Yap"):
+            if st.button("Giriş Yap"):
                 if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
                 else: st.error("❌ Hatalı Giriş!")
-    
-    # GİRİŞ YAPILMIŞSA
     else:
-        st.success(f"🔓 Hoş geldiniz Yetkili: {DENETCI_USER}")
-        
+        st.success(f"🔓 Hoş geldiniz: {DENETCI_USER}")
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
-        
-        # QR KOD KONTROLÜ
         if url_sinif and url_sinif in siniflar:
-            st.info(f"📍 Denetim Konumu Doğrulandı: **{url_sinif}**")
-            
-            # Sınıf bilgisini sabitliyoruz
             s_sinif = url_sinif
-            
             with st.form("puanlama_formu"):
-                st.subheader(f"📋 {s_sinif} Sınıfı Değerlendirme Formu")
-                st.write(f"📅 Tarih: {bugun}")
+                st.subheader(f"📋 {s_sinif} Değerlendirme Formu")
                 k1 = st.checkbox("💨 Havalandırma Durumu")
                 k2 = st.checkbox("🪑 Sıra ve Masa Temizliği")
                 k3 = st.checkbox("🧹 Zemin ve Köşelerin Hijyeni")
                 k4 = st.checkbox("🗑️ Çöp Kutusu ve Atık Yönetimi")
                 k5 = st.checkbox("✨ Genel Sınıf Tertibi")
-                
                 if st.form_submit_button("💾 VERİYİ MÜHÜRLE"):
                     df = verileri_yukle()
-                    zaten_var_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == s_sinif)]
-                    
-                    if not zaten_var_mi.empty:
-                        st.error(f"❌ HATA: {s_sinif} için bugün zaten kayıt yapılmış!")
+                    if not df[(df['Tarih'] == bugun) & (df['Sınıf'] == s_sinif)].empty:
+                        st.error("❌ Bu sınıf için bugün zaten kayıt yapılmış!")
                     else:
                         puan = sum([k1, k2, k3, k4, k5]) * 20
                         yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": s_sinif, "Puan": puan, "Yetkili": DENETCI_USER}])
                         veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                        st.success(f"✅ Başarılı! {s_sinif} verisi kaydedildi.")
+                        st.success("✅ Kaydedildi!")
                         st.balloons()
         else:
-            st.error("⚠️ **KAREKOD BULUNAMADI!**")
-            st.write("Lütfen denetim yapmak istediğiniz sınıfın kapısındaki karekodu okutarak bu sayfaya geliniz.")
-
-        if st.button("🚪 Oturumu Kapat"):
+            st.error("⚠️ Lütfen sınıf karekodunu okutunuz.")
+        if st.button("🚪 Çıkış"):
             st.session_state['denetci_onayli'] = False
             st.rerun()
 
-# --- 📊 YÖNETİCİ PANELİ ---
+# --- 📊 YÖNETİCİ PANELİ (ŞAMPİYONLAR NOTU EKLENDİ) ---
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
@@ -149,39 +114,56 @@ elif sayfa == "📊 Yönetici Paneli":
     if not st.session_state['admin_onayli']:
         with st.container(border=True):
             y_u = st.text_input("Yönetici Adı:", key="y_u")
-            y_p = st.text_input("Yönetici Şifresi:", type="password", key="y_p")
-            if st.button("Paneli Kilidini Aç"):
+            y_p = st.text_input("Şifre:", type="password", key="y_p")
+            if st.button("Giriş"):
                 if y_u == YONETICI_USER and y_p == YONETICI_PASS:
                     st.session_state['admin_onayli'] = True
                     st.rerun()
-                else: st.error("❌ Yetkisiz Erişim!")
+                else: st.error("❌ Hatalı!")
     else:
-        st.success("🔓 Yönetim Paneli Aktif.")
-        
         df = verileri_yukle()
-        if not df.empty:
-            tab_g, tab_h, tab_a = st.tabs(["📌 Günlük", "📅 Haftalık", "📈 Aylık"])
-            with tab_g:
-                g_df = df[df['Tarih'] == bugun]
-                if not g_df.empty:
-                    st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title="Bugünkü Durum"), use_container_width=True)
-                else: st.info("Bugün henüz veri yok.")
-            
-            # --- SINIF BAZLI YÖNETİM ---
-            st.divider()
-            st.subheader("📂 Kayıt Yönetimi")
-            for sinif in sorted(df['Sınıf'].unique()):
-                with st.expander(f"🏫 {sinif} Arşivi"):
-                    s_df = df[df['Sınıf'] == sinif]
-                    for idx, row in s_df.iterrows():
-                        c1, c2 = st.columns([5, 1])
-                        c1.write(f"📅 {row['Tarih']} | ⭐ {row['Puan']} Puan")
-                        if c2.button("Sil", key=f"del_{sinif}_{idx}"):
-                            veri_listesini_guncelle(df.drop(idx))
-                            st.rerun()
-        else:
-            st.info("Kayıt bulunmuyor.")
+        
+        # --- ŞAMPİYONLARI HESAPLAMA ---
+        def sampiyon_bul(veri, baslik):
+            if not veri.empty:
+                skorlar = veri.groupby("Sınıf")["Puan"].mean()
+                en_yuksek = skorlar.max()
+                sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
+                return f"{baslik}: **{', '.join(sampiyonlar)}** ({int(en_yuksek)} Puan)"
+            return f"{baslik}: Veri bulunamadı."
 
-        if st.button("🚪 Güvenli Çıkış"):
+        st.subheader("🏆 Hijyen Şampiyonları")
+        with st.container(border=True):
+            # Günlük
+            g_df = df[df['Tarih'] == bugun]
+            # Haftalık
+            h_df = df[df['Tarih'] >= (bugun - timedelta(days=7))]
+            # Aylık
+            a_df = df[df['Tarih'] >= (bugun - timedelta(days=30))]
+
+            st.write(f"🥇 **1. Bugünün Şampiyonu:** {sampiyon_bul(g_df, '').replace(': ', '')}")
+            st.write(f"🥈 **2. Haftanın Şampiyonu:** {sampiyon_bul(h_df, '').replace(': ', '')}")
+            st.write(f"🥉 **3. Ayın Şampiyonu:** {sampiyon_bul(a_df, '').replace(': ', '')}")
+
+        st.divider()
+        
+        # Grafik Sekmeleri
+        tab_g, tab_h, tab_a = st.tabs(["📌 Günlük", "📅 Haftalık", "📈 Aylık"])
+        with tab_g:
+            if not g_df.empty: st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title="Bugünkü Dağılım"), use_container_width=True)
+        
+        # Arşiv ve Silme
+        st.subheader("📂 Kayıt Yönetimi")
+        for sinif in sorted(df['Sınıf'].unique()):
+            with st.expander(f"🏫 {sinif} Kayıtları"):
+                s_df = df[df['Sınıf'] == sinif]
+                for idx, row in s_df.iterrows():
+                    c1, c2 = st.columns([5, 1])
+                    c1.write(f"📅 {row['Tarih']} | ⭐ {row['Puan']} Puan")
+                    if c2.button("Sil", key=f"del_{sinif}_{idx}"):
+                        veri_listesini_guncelle(df.drop(idx))
+                        st.rerun()
+
+        if st.button("🚪 Çıkış"):
             st.session_state['admin_onayli'] = False
             st.rerun()
