@@ -191,3 +191,4 @@ elif sayfa == "📊 Yönetici Paneli":
         if st.button("🚪 Çıkış"):
             st.session_state['admin_onayli'] = False
             st.rerun()
+
