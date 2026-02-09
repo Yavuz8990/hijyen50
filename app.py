@@ -15,37 +15,40 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. ÖZEL TASARIM (CSS) - BEYAZ ÇİZGİ VE BEYAZ METİN ---
+# --- 3. ÖZEL TASARIM (CSS) - BEYAZ HAREKETLİ ÇUBUK SİSTEMİ ---
 st.markdown("""
     <style>
-    /* Slider Çizgisini (Track) BEYAZ/Gümüş Yap */
-    .stSlider [data-baseweb="slider"] > div:first-child {
-        background: #FFFFFF !important;
-        height: 8px;
-        border-radius: 4px;
+    /* 1. Slider'ın arkasındaki sabit ince hattı koyulaştır (Daha belirgin olması için) */
+    .stSlider [data-baseweb="slider"] {
+        height: 10px;
     }
     
-    /* Slider Doluluk Rengini (Seçili Alan) Beyaz Yap */
-    .stSlider [data-baseweb="slider"] > div > div {
-        background-color: #f0f2f6 !important;
+    /* 2. HAREKET EDEN VE DOLAN ÇUBUK (BEYAZ YAPILDI) */
+    .stSlider [data-baseweb="slider"] > div:first-child {
+        background: #FFFFFF !important; 
+        height: 10px;
+        border-radius: 5px;
     }
 
-    /* Slider Düğmesini (Thumb) Parlak Beyaz Yap */
+    /* 3. Slider Düğmesini (Yuvarlak Tutamaç) Parlak Beyaz ve Belirgin Yap */
     .stSlider [role="slider"] {
         background-color: #FFFFFF !important;
         border: 2px solid #00D2FF !important;
+        height: 22px;
+        width: 22px;
     }
 
-    /* Tüm Yazıların Rengini BEYAZ Yap */
+    /* 4. Tüm Yazıların Rengini BEYAZ Yap (Başlıklar ve Rakamlar) */
     .stSlider [data-testid="stWidgetLabel"] p, 
     .stSlider div[data-testid="stThumbValue"],
     .stSlider [data-baseweb="slider"] + div div {
         color: #FFFFFF !important;
         font-weight: bold !important;
-        background-color: transparent !important;
+        font-size: 16px !important;
+        text-shadow: 1px 1px 2px #000000;
     }
 
-    /* Expander ve Diğer Başlıklar BEYAZ */
+    /* Expander ve Alt Başlıklar BEYAZ */
     .st-emotion-cache-p4mowd, h3, .stSubheader {
         color: #FFFFFF !important;
     }
@@ -120,7 +123,6 @@ elif sayfa == "📝 Denetçi Girişi":
             if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                 st.session_state['denetci_onayli'] = True
                 st.rerun()
-            else: st.error("Hatalı Giriş!")
     else:
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         if url_sinif in siniflar:
@@ -128,31 +130,26 @@ elif sayfa == "📝 Denetçi Girişi":
             with st.form("hassas_form"):
                 st.subheader(f"📍 Denetlenen: {s_sinif}")
                 
-                # 1. Havalandırma
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
-                    p1_1 = st.slider("Havalandırma Durumu (0-10)", 0, 10, 0)
-                    p1_2 = st.slider("Koku Kontrolü (0-10)", 0, 10, 0)
-                # 2. Masa ve Sıra
+                    p1_1 = st.slider("Havalandırma Durumu (0-10)", 0, 10, 0, key="s1")
+                    p1_2 = st.slider("Koku Kontrolü (0-10)", 0, 10, 0, key="s2")
                 with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
-                    p2_1 = st.slider("Masa Temizliği (0-6)", 0, 6, 0)
-                    p2_2 = st.slider("Sıra Altı/Üstü (0-6)", 0, 6, 0)
-                    p2_3 = st.slider("Genel Düzen (0-8)", 0, 8, 0)
-                # 3. Zemin ve Köşe
-                with st.expander("Sweep 3. Zemin ve Köşe Temizliği"):
-                    p3_1 = st.slider("Dip Köşe Temizliği (0-6)", 0, 6, 0)
-                    p3_2 = st.slider("Cam Kenarları (0-6)", 0, 6, 0)
-                    p3_3 = st.slider("Zemin Temizliği (0-8)", 0, 8, 0)
-                # 4. Çöp
+                    p2_1 = st.slider("Masa Temizliği (0-6)", 0, 6, 0, key="s3")
+                    p2_2 = st.slider("Sıra Altı/Üstü (0-6)", 0, 6, 0, key="s4")
+                    p2_3 = st.slider("Genel Düzen (0-8)", 0, 8, 0, key="s5")
+                with st.expander("🧹 3. Zemin ve Köşe Temizliği"):
+                    p3_1 = st.slider("Dip Köşe Temizliği (0-6)", 0, 6, 0, key="s6")
+                    p3_2 = st.slider("Cam Kenarları (0-6)", 0, 6, 0, key="s7")
+                    p3_3 = st.slider("Zemin Temizliği (0-8)", 0, 8, 0, key="s8")
                 with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
-                    p4_1 = st.slider("Doğru Kullanım (0-6)", 0, 6, 0)
-                    p4_2 = st.slider("Doluluk Oranı (0-6)", 0, 6, 0)
-                    p4_3 = st.slider("Çevre Temizliği (0-8)", 0, 8, 0)
-                # 5. Genel
+                    p4_1 = st.slider("Doğru Kullanım (0-6)", 0, 6, 0, key="s9")
+                    p4_2 = st.slider("Doluluk Oranı (0-6)", 0, 6, 0, key="s10")
+                    p4_3 = st.slider("Çevre Temizliği (0-8)", 0, 8, 0, key="s11")
                 with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
-                    p5_1 = st.slider("Duvarlar (0-5)", 0, 5, 0)
-                    p5_2 = st.slider("Panolar (0-5)", 0, 5, 0)
-                    p5_3 = st.slider("Tahta (0-5)", 0, 5, 0)
-                    p5_4 = st.slider("Genel Görünüm (0-5)", 0, 5, 0)
+                    p5_1 = st.slider("Duvarlar (0-5)", 0, 5, 0, key="s12")
+                    p5_2 = st.slider("Panolar (0-5)", 0, 5, 0, key="s13")
+                    p5_3 = st.slider("Tahta (0-5)", 0, 5, 0, key="s14")
+                    p5_4 = st.slider("Genel Görünüm (0-5)", 0, 5, 0, key="s15")
 
                 if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
                     toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
