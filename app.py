@@ -315,7 +315,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
             st.divider()
 
-            st.divider()
             st.subheader("📈 Performans Analizi")
             
             with st.expander("📊 DETAYLI HİJYEN KARNELERİNİ GÖRÜNTÜLE", expanded=False):
@@ -458,5 +457,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
+
 
 
