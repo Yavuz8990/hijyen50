@@ -282,7 +282,7 @@ elif sayfa == "📊 Yönetici Paneli":
                     h_col1, h_col2, h_col3, h_col4 = st.columns([2, 2, 2, 1])
                     h_col1.write("**Tarih**")
                     h_col2.write("**Puan**")
-                    h_col3.write("**Denetçi**") # Burası artık girilen ismi gösterecek
+                    h_col3.write("**Denetçi**") 
                     h_col4.write("**İşlem**")
                     
                     for idx, row in sinif_df.iterrows():
@@ -296,9 +296,27 @@ elif sayfa == "📊 Yönetici Paneli":
                             st.success(f"Kayıt silindi!")
 
             st.divider()
-            if st.button("🚨 Tüm Sistemi Sıfırla (Kritik)"):
-                veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
-                st.rerun()
+            
+            # --- YÖNETİM ARAÇLARI (YENİ EKLENEN KISIM) ---
+            st.subheader("⚙️ Yönetim Araçları")
+            
+            col_ Arac1, col_Arac2 = st.columns(2)
+            
+            with col_Arac1:
+                # DENETÇİ İSMİNİ SIFIRLAMA BUTONU
+                if st.button("🔄 Günlük Denetçi İsmini Sıfırla"):
+                    if os.path.exists(SESSION_FILE):
+                        os.remove(SESSION_FILE)
+                        st.session_state['denetci_adi'] = None
+                        st.success("✅ Denetçi hafızası silindi! 'Denetçi Girişi' ekranında isim tekrar sorulacak.")
+                    else:
+                        st.info("ℹ️ Zaten kayıtlı bir günlük denetçi ismi yok.")
+
+            with col_Arac2:
+                # TÜM VERİTABANINI SIFIRLAMA BUTONU
+                if st.button("🚨 Tüm Veritabanını Sıfırla (Kritik)"):
+                    veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
+                    st.rerun()
                 
         else:
             st.info("Henüz kaydedilmiş bir veri bulunmuyor.")
