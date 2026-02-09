@@ -162,34 +162,57 @@ if sayfa == "🏠 Ana Sayfa":
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
+    
     if not st.session_state['denetci_onayli']:
         d_u = st.text_input("Kullanıcı Adı:"); d_p = st.text_input("Şifre:", type="password")
-        if st.button("Giriş Yap"):
-            if d_u == DENETCI_USER and d_p == DENETCI_PASS: st.session_state['denetci_onayli'] = True; st.rerun()
+        if st.button("Sisteme Bağlan"):
+            if d_u == DENETCI_USER and d_p == DENETCI_PASS:
+                st.session_state['denetci_onayli'] = True; st.rerun()
     else:
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         if url_sinif and url_sinif in siniflar:
-            with st.form("hassas_form"):
-                st.subheader(f"📍 Denetlenen: {url_sinif}")
+            with st.form("denetim_formu"):
+                st.subheader(f"📍 Denetlenen Alan: {url_sinif}")
+                
+                # --- Kriterler ---
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
                     p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
                     p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
                 with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
-                    p2_1 = st.slider("Masa yüzeyleri temiz (0-6)", 0, 6, 0); p2_2 = st.slider("Sıra üstünde/altında çöp yok (0-6)", 0, 6, 0); p2_3 = st.slider("Genel düzen iyi (0-8)", 0, 8, 0)
-                with st.expander("🧹 3. Zemin ve Köşe Temizliği"):
-                    p3_1 = st.slider("Dip köşelerde çöp/toz yok (0-6)", 0, 6, 0); p3_2 = st.slider("Cam kenarları temiz (0-6)", 0, 6, 0); p3_3 = st.slider("Zemin temizliği güzel (0-8)", 0, 8, 0)
+                    p2_1 = st.slider("Masa yüzeyleri temiz (0-6)", 0, 6, 0)
+                    p2_2 = st.slider("Sıra üstünde, altında çöp ve dağınıklık yok (0-6)", 0, 6, 0)
+                    p2_3 = st.slider("Genel masa–sıra düzeni iyi (0-8)", 0, 8, 0)
+                with st.expander("Sweep 3. Zemin ve Köşe Temizliği"):
+                    p3_1 = st.slider("Köşe ve diplerde çöp/toz yok (0-6)", 0, 6, 0)
+                    p3_2 = st.slider("Cam kenarları ve pencere dipleri temiz (0-6)", 0, 6, 0)
+                    p3_3 = st.slider("Zemin genel temizliği güzel (0-8)", 0, 8, 0)
                 with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
-                    p4_1 = st.slider("Doğru kullanım (0-6)", 0, 6, 0); p4_2 = st.slider("Taşmamış kutu (0-6)", 0, 6, 0); p4_3 = st.slider("Çevre temiz (0-8)", 0, 8, 0)
+                    p4_1 = st.slider("Çöp kutusu doğru kullanılmış (0-6)", 0, 6, 0)
+                    p4_2 = st.slider("Çöp kutusu taşmamış (0-6)", 0, 6, 0)
+                    p4_3 = st.slider("Çöp kutusu çevresi temiz (0-8)", 0, 8, 0)
                 with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
-                    p5_1 = st.slider("Duvarlar temiz (0-5)", 0, 5, 0); p5_2 = st.slider("Panolar düzenli (0-5)", 0, 5, 0); p5_3 = st.slider("Tahta silinmiş (0-5)", 0, 5, 0); p5_4 = st.slider("Genel görünüm (0-5)", 0, 5, 0)
-                if st.form_submit_button("💾 KAYDET"):
-                    toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
+                    p5_1 = st.slider("Duvarlarda kir, yazı ve düzensizlik yok (0-5)", 0, 5, 0)
+                    p5_2 = st.slider("Panolar karışık ve dağınık değil (0-5)", 0, 5, 0)
+                    p5_3 = st.slider("Tahta silinmiş, gereksiz yazı yok (0-5)", 0, 5, 0)
+                    p5_4 = st.slider("Sınıfın genel görünümü güzel (0-5)", 0, 5, 0)
+
+                # Kaydet butonu tıklandığında kontrol yap
+                if st.form_submit_button("💾 DEĞERLENDİRMEYİ MÜHÜRLE"):
                     df = verileri_yukle()
-                    yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": url_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
-                    veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                    st.success(f"Başarılı! Puan: {toplam}"); st.balloons()
-        else: st.error("⚠️ QR kod okutulmadı.")
-        if st.button("Çıkış"): st.session_state['denetci_onayli'] = False; st.rerun()
+                    
+                    # KRİTİK KONTROL: Bugün bu sınıf için kayıt var mı?
+                    zaten_yapildi_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == url_sinif)]
+                    
+                    if not zaten_yapildi_mi.empty:
+                        st.error(f"⚠️ DİKKAT: {url_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış! Günde sadece 1 kayıt girebilirsiniz.")
+                    else:
+                        toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
+                        yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": url_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
+                        veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
+                        st.success(f"Kayıt Başarıyla Tamamlandı! Skor: {toplam}")
+                        st.balloons()
+        else:
+            st.warning("⚠️ Lütfen geçerli bir sınıf QR kodu okutunuz.")
 
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
@@ -248,5 +271,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
+
 
 
