@@ -103,7 +103,7 @@ if sayfa == "🏠 Ana Sayfa":
     st.markdown(f"""
         <div style="text-align: center; padding: 30px; border: 4px solid #CD7F32; border-radius: 20px; background: rgba(205, 127, 50, 0.15); margin-top: 20px;">
             <h2 style="color: #CD7F32; margin: 0; font-size: 35px;">🥉 AYIN HİJYEN ŞAMPİYONU</h2>
-            <p style="font-size: 45px; font-weight: bold; color: white; margin-top: 15px;">{sampiyon_bul_text(a_df)}</p>
+            <p style="font-size: 45px; font-weight: bold; color: blue; margin-top: 15px;">{sampiyon_bul_text(a_df)}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -209,3 +209,4 @@ elif sayfa == "📊 Yönetici Paneli":
             if st.button("Verileri Sıfırla"):
                 veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
                 st.rerun()
+
