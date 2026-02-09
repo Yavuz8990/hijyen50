@@ -38,13 +38,19 @@ guncel_an = datetime.now(tr_timezone)
 bugun = guncel_an.date()
 
 def verileri_yukle():
+    sutunlar = ["Tarih", "Sınıf", "Puan", "Yetkili", "K1_Hava", "K2_Masa", "K3_Zemin", "K4_Cop", "K5_Genel"]
     if os.path.exists(DB_FILE):
         try:
             df = pd.read_csv(DB_FILE)
+            # Eğer eski dosya varsa ve yeni sütunlar eksikse onları 0 olarak ekle
+            for col in sutunlar:
+                if col not in df.columns:
+                    df[col] = 0
+            
             df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
             return df
-        except: return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
-    return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
+        except: return pd.DataFrame(columns=sutunlar)
+    return pd.DataFrame(columns=sutunlar)
 
 def veri_listesini_guncelle(df):
     df.to_csv(DB_FILE, index=False)
@@ -227,16 +233,27 @@ elif sayfa == "📝 Denetçi Girişi":
                         zaten_yapildi_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == secilen_sinif)]
                         
                         if not zaten_yapildi_mi.empty:
-                            st.error(f"⚠️ DİKKAT: {secilen_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış! Günde sadece 1 kayıt girebilirsiniz.")
+                            st.error(f"⚠️ DİKKAT: {secilen_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış!")
                         else:
-                            toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
+                            # 5 Ana Maddenin Puanlarını Ayrı Ayrı Hesapla (Hepsi 20 Üzerinden)
+                            k1 = p1_1 + p1_2                 # Havalandırma
+                            k2 = p2_1 + p2_2 + p2_3          # Masa
+                            k3 = p3_1 + p3_2 + p3_3          # Zemin
+                            k4 = p4_1 + p4_2 + p4_3          # Çöp
+                            k5 = p5_1 + p5_2 + p5_3 + p5_4   # Genel
                             
-                            # BURADA YETKİLİ KISMINA ARTIK İSİM KAYDEDİLİYOR
+                            toplam = k1 + k2 + k3 + k4 + k5
+                            
                             yeni = pd.DataFrame([{
                                 "Tarih": bugun, 
                                 "Sınıf": secilen_sinif, 
                                 "Puan": toplam, 
-                                "Yetkili": st.session_state['denetci_adi'] # Değişen kısım burası
+                                "Yetkili": st.session_state['denetci_adi'],
+                                "K1_Hava": k1,
+                                "K2_Masa": k2,
+                                "K3_Zemin": k3,
+                                "K4_Cop": k4,
+                                "K5_Genel": k5
                             }])
                             
                             veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
@@ -298,6 +315,87 @@ elif sayfa == "📊 Yönetici Paneli":
 
             st.divider()
 
+            st.divider()
+            st.subheader("📈 Performans Analizi")
+            
+            with st.expander("📊 DETAYLI HİJYEN KARNELERİNİ GÖRÜNTÜLE", expanded=False):
+                st.info("Aşağıdaki butonlara tıklayarak sınıfların güçlü ve zayıf yönlerini analiz edebilirsiniz. (Veriler son 30 günün ortalamasıdır)")
+                
+                # Son 30 günün verisini al
+                analiz_df = df[df['Tarih'] >= (bugun - timedelta(days=30))]
+                
+                if not analiz_df.empty:
+                    siniflar = sorted(analiz_df['Sınıf'].unique())
+                    
+                    # Her sınıf için döngü
+                    for sinif in siniflar:
+                        s_veri = analiz_df[analiz_df['Sınıf'] == sinif]
+                        
+                        # Eğer detay verisi yoksa (eski kayıtsa) analiz yapma
+                        if s_veri['K1_Hava'].sum() == 0 and s_veri['Puan'].sum() > 0:
+                            continue
+
+                        # Ortalamaları Al
+                        ort_k1 = s_veri['K1_Hava'].mean()
+                        ort_k2 = s_veri['K2_Masa'].mean()
+                        ort_k3 = s_veri['K3_Zemin'].mean()
+                        ort_k4 = s_veri['K4_Cop'].mean()
+                        ort_k5 = s_veri['K5_Genel'].mean()
+                        genel_ort = s_veri['Puan'].mean()
+                        
+                        # --- SINIF BUTONU (EXPANDER) ---
+                        with st.expander(f"🔎 {sinif} SINIFI KARNESİ (Ort: {genel_ort:.1f})"):
+                            
+                            col_analiz1, col_analiz2 = st.columns([2, 1])
+                            
+                            # SOL TARAF: RADAR GRAFİĞİ
+                            with col_analiz1:
+                                kategoriler = ['Havalandırma', 'Masa/Sıra', 'Zemin/Köşe', 'Çöp Kutusu', 'Genel Yüzey']
+                                degerler = [ort_k1, ort_k2, ort_k3, ort_k4, ort_k5]
+                                
+                                # Grafik verisi
+                                df_radar = pd.DataFrame(dict(
+                                    Puan=degerler,
+                                    Kriter=kategoriler
+                                ))
+                                
+                                fig = px.line_polar(df_radar, r='Puan', theta='Kriter', line_close=True, range_r=[0, 20])
+                                fig.update_traces(fill='toself', line_color='#00D2FF')
+                                fig.update_layout(
+                                    paper_bgcolor="rgba(0,0,0,0)",
+                                    plot_bgcolor="rgba(0,0,0,0)",
+                                    font_color="white",
+                                    margin=dict(l=40, r=40, t=20, b=20)
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+
+                            # SAĞ TARAF: YORUM VE İSTATİSTİK
+                            with col_analiz2:
+                                # Sözlük oluşturup en büyük/küçük bulma
+                                puanlar = {
+                                    '🌬️ Havalandırma': ort_k1,
+                                    '🪑 Masa Düzeni': ort_k2,
+                                    '🧹 Zemin': ort_k3,
+                                    '🗑️ Atık Yönetimi': ort_k4,
+                                    '✨ Genel Temizlik': ort_k5
+                                }
+                                
+                                en_iyi_konu = max(puanlar, key=puanlar.get)
+                                en_kotu_konu = min(puanlar, key=puanlar.get)
+                                
+                                st.markdown("### 📝 Karne Yorumu")
+                                
+                                # İYİ OLAN
+                                st.success(f"**👏 En İyi Olduğu Alan:**\n\n{en_iyi_konu}\n\n**(Puan: {puanlar[en_iyi_konu]:.1f} / 20)**")
+                                
+                                # KÖTÜ OLAN
+                                if puanlar[en_kotu_konu] < 14:
+                                    st.error(f"**⚠️ Acil Düzelmesi Gereken:**\n\n{en_kotu_konu}\n\n**(Puan: {puanlar[en_kotu_konu]:.1f} / 20)**")
+                                else:
+                                    st.warning(f"**🔧 Geliştirilebilir Alan:**\n\n{en_kotu_konu}\n\n**(Puan: {puanlar[en_kotu_konu]:.1f} / 20)**")
+
+                else:
+                    st.warning("Analiz için yeterli veri bulunamadı.")
             # --- 2. PASTA GRAFİĞİ ---
             st.subheader("📌 Günlük Hijyen Dağılımı")
             g_df = df[df['Tarih'] == bugun]
@@ -360,4 +458,5 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
+
 
