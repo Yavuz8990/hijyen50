@@ -15,34 +15,38 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. ÖZEL TASARIM (CSS) ---
-# Çizgi kırmızıdan maviye döner, tüm yazılar ve hareket eden rakamlar BEYAZ olur.
+# --- 3. ÖZEL TASARIM (CSS) - SADE VE BEYAZ METİN ---
 st.markdown("""
     <style>
-    /* Slider Çizgisini Kırmızıdan Maviye Dönüştür */
-    .stSlider [data-baseweb="slider"] > div:first-child {
-        background: linear-gradient(to right, #FF0000 0%, #00D2FF 100%) !important;
-        height: 10px;
-        border-radius: 5px;
+    /* Dinamik renk geçişlerini kaldırdık, sadece beyaz metin odaklı sade tasarım */
+    
+    /* Slider üzerindeki ana başlıklar BEYAZ */
+    .stSlider [data-testid="stWidgetLabel"] p {
+        color: #FFFFFF !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
     }
     
-    /* Tüm Yazıların Rengini BEYAZ Yap (Slider başlıkları, rakamlar, alt değerler) */
-    .stSlider [data-testid="stWidgetLabel"] p, 
-    .stSlider div[data-testid="stThumbValue"],
+    /* Slider'ın hareket eden rakamı (thumb value) BEYAZ */
+    .stSlider div[data-testid="stThumbValue"] {
+        color: #FFFFFF !important;
+        font-weight: bold !important;
+        font-size: 18px !important;
+    }
+
+    /* Slider'ın altındaki 0, 5, 10 gibi rakamlar BEYAZ */
     .stSlider [data-baseweb="slider"] + div div {
         color: #FFFFFF !important;
         font-weight: bold !important;
-        background-color: transparent !important;
-        text-shadow: 1px 1px 2px #000000; /* Beyaz yazının okunurluğu için hafif gölge */
     }
 
-    /* Expander (Açılır Kutu) Başlık Yazılarını BEYAZ Yap */
-    .st-emotion-cache-p4mowd, .st-emotion-cache-1h9vt8z p {
+    /* Expander başlıklarını beyaz yapar */
+    .st-emotion-cache-p4mowd {
         color: #FFFFFF !important;
     }
     
-    /* Form içindeki diğer metin alanlarını BEYAZ yap */
-    .stMarkdown p, .stSubheader h3 {
+    /* Subheader ve Form başlıkları beyaz */
+    h3, .stSubheader {
         color: #FFFFFF !important;
     }
     </style>
@@ -89,10 +93,10 @@ sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Gir
 
 if sayfa == "🏠 Ana Sayfa":
     df_genel = verileri_yukle()
-    st.markdown("""<div style='text-align: center;'><h1 style='color: #00D2FF; font-size: 60px;'>HİJYEN 5.0</h1></div>""", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #00D2FF;'>HİJYEN 5.0</h1>", unsafe_allow_html=True)
     
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
-    st.markdown(f"""<div style='text-align: center; border: 2px solid #CD7F32; border-radius: 15px; padding: 15px;'><h3>🥉 AYIN HİJYEN ŞAMPİYONU</h3><p style='font-size: 30px; font-weight: bold; color: #FFFFFF;'>{sampiyon_bul_text(a_df)}</p></div>""", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center; border: 2px solid #CD7F32; border-radius: 15px; padding: 15px;'><h3>🥉 AYIN HİJYEN ŞAMPİYONU</h3><p style='font-size: 30px; font-weight: bold; color: #FFFFFF;'>{sampiyon_bul_text(a_df)}</p></div>", unsafe_allow_html=True)
 
     with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASI"):
         if not a_df.empty:
@@ -125,25 +129,25 @@ elif sayfa == "📝 Denetçi Girişi":
                 st.subheader(f"📍 Denetlenen: {s_sinif}")
                 
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
-                    p1_1 = st.slider("Havalandırma Durumu (0-10)", 0, 10, 0, key="p1_1")
-                    p1_2 = st.slider("Koku Kontrolü (0-10)", 0, 10, 0, key="p1_2")
+                    p1_1 = st.slider("Havalandırma Durumu (0-10)", 0, 10, 0)
+                    p1_2 = st.slider("Koku Kontrolü (0-10)", 0, 10, 0)
                 with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
-                    p2_1 = st.slider("Masa Temizliği (0-6)", 0, 6, 0, key="p2_1")
-                    p2_2 = st.slider("Sıra Altı/Üstü (0-6)", 0, 6, 0, key="p2_2")
-                    p2_3 = st.slider("Genel Düzen (0-8)", 0, 8, 0, key="p2_3")
+                    p2_1 = st.slider("Masa Temizliği (0-6)", 0, 6, 0)
+                    p2_2 = st.slider("Sıra Altı/Üstü (0-6)", 0, 6, 0)
+                    p2_3 = st.slider("Genel Düzen (0-8)", 0, 8, 0)
                 with st.expander("🧹 3. Zemin ve Köşe Temizliği"):
-                    p3_1 = st.slider("Dip Köşe Temizliği (0-6)", 0, 6, 0, key="p3_1")
-                    p3_2 = st.slider("Cam Kenarları (0-6)", 0, 6, 0, key="p3_2")
-                    p3_3 = st.slider("Zemin Temizliği (0-8)", 0, 8, 0, key="p3_3")
+                    p3_1 = st.slider("Dip Köşe Temizliği (0-6)", 0, 6, 0)
+                    p3_2 = st.slider("Cam Kenarları (0-6)", 0, 6, 0)
+                    p3_3 = st.slider("Zemin Temizliği (0-8)", 0, 8, 0)
                 with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
-                    p4_1 = st.slider("Doğru Kullanım (0-6)", 0, 6, 0, key="p4_1")
-                    p4_2 = st.slider("Doluluk Oranı (0-6)", 0, 6, 0, key="p4_2")
-                    p4_3 = st.slider("Çevre Temizliği (0-8)", 0, 8, 0, key="p4_3")
+                    p4_1 = st.slider("Doğru Kullanım (0-6)", 0, 6, 0)
+                    p4_2 = st.slider("Doluluk Oranı (0-6)", 0, 6, 0)
+                    p4_3 = st.slider("Çevre Temizliği (0-8)", 0, 8, 0)
                 with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
-                    p5_1 = st.slider("Duvarlar (0-5)", 0, 5, 0, key="p5_1")
-                    p5_2 = st.slider("Panolar (0-5)", 0, 5, 0, key="p5_2")
-                    p5_3 = st.slider("Tahta (0-5)", 0, 5, 0, key="p5_3")
-                    p5_4 = st.slider("Genel Görünüm (0-5)", 0, 5, 0, key="p5_4")
+                    p5_1 = st.slider("Duvarlar (0-5)", 0, 5, 0)
+                    p5_2 = st.slider("Panolar (0-5)", 0, 5, 0)
+                    p5_3 = st.slider("Tahta (0-5)", 0, 5, 0)
+                    p5_4 = st.slider("Genel Görünüm (0-5)", 0, 5, 0)
 
                 if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
                     toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
