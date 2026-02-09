@@ -14,19 +14,24 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. DİNAMİK SLIDER RENGİ (CSS) ---
-# Puan arttıkça kırmızıdan maviye (hijyen rengine) dönen tasarım
+# --- 3. DİNAMİK SLIDER RENK TASARIMI (CSS) ---
+# Bu kod slider'ın içindeki doluluk rengini kırmızıdan maviye gradyan olarak değiştirir.
 st.markdown("""
     <style>
-    /* Slider çubuğunun arka planını puana göre gradyan yapar */
+    /* Slider'ın arka plan kanalını ve dolgu rengini hedefler */
     .stSlider [data-baseweb="slider"] {
-        background: linear-gradient(to right, #ff4b4b 0%, #00d2ff 100%);
-        height: 10px;
-        border-radius: 5px;
+        height: 12px;
     }
-    /* Slider düğmesini (başlığını) özelleştirir */
-    .stSlider [data-testid="stTickBar"] {
-        display: none;
+    .stSlider [data-baseweb="slider"] > div:first-child {
+        background: linear-gradient(to right, #FF0000 0%, #00D2FF 100%) !important;
+        height: 12px;
+        border-radius: 6px;
+    }
+    /* Slider düğmesini (thumb) beyaz ve belirgin yapar */
+    .stSlider [data-baseweb="slider"] [role="slider"] {
+        background-color: #FFFFFF;
+        border: 2px solid #00D2FF;
+        box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -74,8 +79,8 @@ sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Gir
 # --- ANA SAYFA ---
 if sayfa == "🏠 Ana Sayfa":
     df_genel = verileri_yukle()
-    st.markdown("""<div style='text-align: center; padding: 10px;'><h1 style='font-family: Arial Black; color: #00D2FF; font-size: 70px; margin-bottom: 0px; text-shadow: 0px 0px 15px rgba(0,210,255,0.6);'>HİJYEN 5.0</h1></div>""", unsafe_allow_html=True)
-
+    st.markdown("""<div style='text-align: center; padding: 10px; background: rgba(0, 210, 255, 0.05); border-radius: 20px;'><h1 style='font-family: Arial Black; color: #00D2FF; font-size: 70px; margin-bottom: 0px;'>HİJYEN 5.0</h1></div>""", unsafe_allow_html=True)
+    
     st.write("")
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
     
@@ -98,14 +103,14 @@ if sayfa == "🏠 Ana Sayfa":
                 elif rank == 3: color = "#CD7F32"; icon = "✨"
                 
                 st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin: 8px 0; border-radius: 12px; background: linear-gradient(90deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0.4) 100%); border: 1px solid {color}; border-left: 8px solid {color};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin: 8px 0; border-radius: 12px; border-left: 8px solid {color}; background: rgba(0,210,255,0.05);">
                         <span style="font-size: 22px; font-weight: bold; color: white;">#{rank} {icon} {row['Sınıf']} Sınıfı</span>
                         <span style="font-size: 24px; font-weight: bold; color: white;">{row['Puan']:.1f}</span>
                     </div>
                 """, unsafe_allow_html=True)
 
     st.write("---")
-    sozler = ["🧼 'Temizlik, sağlıktan önce gelir.'", "✨ 'Geleceğin temiz okulu, bugünle başlar.'", "💎 'Hijyen başarının aynasıdır.'"]
+    sozler = ["🧼 'Temizlik, sağlıktan önce gelir.'", "✨ 'Geleceğin temiz okulu, bugünden başlar.'", "💎 'Hijyen başarının aynasıdır.'"]
     st.markdown(f"<div style='text-align: center;'><p style='font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold;'>{sozler[bugun.day % 3]}</p></div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -113,7 +118,7 @@ if sayfa == "🏠 Ana Sayfa":
         try: st.image("afis.jpg", use_container_width=True)
         except: st.warning("⚠️ Afiş Bulunamadı.")
 
-# --- 📝 DENETÇİ SAYFASI (RENKLİ SLIDERLAR) ---
+# --- 📝 DENETÇİ SAYFASI (RENKLİ SLIDER) ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
@@ -135,6 +140,7 @@ elif sayfa == "📝 Denetçi Girişi":
             with st.form("hassas_puanlama_formu"):
                 st.subheader(f"📋 {s_sinif} Değerlendirme Formu")
                 
+                # Form Maddeleri
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
                     p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
                     p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
@@ -156,15 +162,15 @@ elif sayfa == "📝 Denetçi Girişi":
                     p5_3 = st.slider("Tahta silinmiş, gereksiz yazı yok (0-5)", 0, 5, 0)
                     p5_4 = st.slider("Sınıfın genel görünümü güzel (0-5)", 0, 5, 0)
 
-                if st.form_submit_button("💾 VERİYİ MÜHÜRLE"):
+                if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
                     toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
                     df = verileri_yukle()
                     if not df[(df['Tarih'] == bugun) & (df['Sınıf'] == s_sinif)].empty:
-                        st.error("❌ Bugün zaten kayıt yapılmış!")
+                        st.error("❌ Bu sınıf için bugün zaten kayıt yapılmış!")
                     else:
                         yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": s_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
                         veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                        st.success(f"✅ Kaydedildi! Puan: {toplam}")
+                        st.success(f"✅ Başarılı! Puan: {toplam}")
                         st.balloons()
         else: st.error("⚠️ QR kod okutulmadı.")
         if st.button("🚪 Çıkış"):
