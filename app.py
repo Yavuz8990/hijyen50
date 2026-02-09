@@ -15,28 +15,33 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. ÖZEL TASARIM (CSS) - SADELEŞTİRİLMİŞ BEYAZ METİN SİSTEMİ ---
+# --- 3. ÖZEL TASARIM (CSS) - SADE ÇİZGİ VE BEYAZ METİN ---
 st.markdown("""
     <style>
-    /* 1. Tüm Yazıların Rengini BEYAZ Yap (Başlıklar, Rakamlar ve Alt Değerler) */
+    /* Slider'ın o kırmızı dolgu kısmını etkisiz hale getir ve sadeleştir */
+    .stSlider [data-baseweb="slider"] > div:first-child {
+        background-color: #31333F !important; /* Arka planla uyumlu koyu renk */
+        height: 4px;
+    }
+    
+    /* Seçili olan (dolan) kısmı da sade bir gri/beyaz tonuna çek */
+    .stSlider [data-baseweb="slider"] > div > div {
+        background-color: #dee2e6 !important;
+    }
+
+    /* Slider başlıklarını, rakamları ve hareket eden sayıyı BEYAZ yap */
     .stSlider [data-testid="stWidgetLabel"] p, 
     .stSlider div[data-testid="stThumbValue"],
     .stSlider [data-baseweb="slider"] + div div {
         color: #FFFFFF !important;
         font-weight: bold !important;
         font-size: 16px !important;
-        text-shadow: 1px 1px 2px #000000; /* Koyu arka planda veya açık renkli çubukta okunurluk için */
     }
 
-    /* 2. Expander (Açılır Kutu) ve Alt Başlıklar BEYAZ */
-    .st-emotion-cache-p4mowd, h3, .stSubheader {
+    /* Expander başlık yazılarını BEYAZ yap */
+    .st-emotion-cache-p4mowd, .st-emotion-cache-1h9vt8z p {
         color: #FFFFFF !important;
-    }
-
-    /* 3. Slider Düğmesini (Tutamaç) Belirgin Yap */
-    .stSlider [role="slider"] {
-        border: 2px solid #FFFFFF !important;
-        background-color: #00D2FF !important;
+        font-weight: bold !important;
     }
     </style>
     """, unsafe_allow_html=True)
