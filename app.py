@@ -15,38 +15,38 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. ÖZEL TASARIM (CSS) - SADE VE BEYAZ METİN ---
+# --- 3. ÖZEL TASARIM (CSS) - BEYAZ ÇİZGİ VE BEYAZ METİN ---
 st.markdown("""
     <style>
-    /* Dinamik renk geçişlerini kaldırdık, sadece beyaz metin odaklı sade tasarım */
-    
-    /* Slider üzerindeki ana başlıklar BEYAZ */
-    .stSlider [data-testid="stWidgetLabel"] p {
-        color: #FFFFFF !important;
-        font-weight: bold !important;
-        font-size: 16px !important;
+    /* Slider Çizgisini (Track) BEYAZ/Gümüş Yap */
+    .stSlider [data-baseweb="slider"] > div:first-child {
+        background: #FFFFFF !important;
+        height: 8px;
+        border-radius: 4px;
     }
     
-    /* Slider'ın hareket eden rakamı (thumb value) BEYAZ */
-    .stSlider div[data-testid="stThumbValue"] {
-        color: #FFFFFF !important;
-        font-weight: bold !important;
-        font-size: 18px !important;
+    /* Slider Doluluk Rengini (Seçili Alan) Beyaz Yap */
+    .stSlider [data-baseweb="slider"] > div > div {
+        background-color: #f0f2f6 !important;
     }
 
-    /* Slider'ın altındaki 0, 5, 10 gibi rakamlar BEYAZ */
+    /* Slider Düğmesini (Thumb) Parlak Beyaz Yap */
+    .stSlider [role="slider"] {
+        background-color: #FFFFFF !important;
+        border: 2px solid #00D2FF !important;
+    }
+
+    /* Tüm Yazıların Rengini BEYAZ Yap */
+    .stSlider [data-testid="stWidgetLabel"] p, 
+    .stSlider div[data-testid="stThumbValue"],
     .stSlider [data-baseweb="slider"] + div div {
         color: #FFFFFF !important;
         font-weight: bold !important;
+        background-color: transparent !important;
     }
 
-    /* Expander başlıklarını beyaz yapar */
-    .st-emotion-cache-p4mowd {
-        color: #FFFFFF !important;
-    }
-    
-    /* Subheader ve Form başlıkları beyaz */
-    h3, .stSubheader {
+    /* Expander ve Diğer Başlıklar BEYAZ */
+    .st-emotion-cache-p4mowd, h3, .stSubheader {
         color: #FFFFFF !important;
     }
     </style>
@@ -98,7 +98,7 @@ if sayfa == "🏠 Ana Sayfa":
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
     st.markdown(f"<div style='text-align: center; border: 2px solid #CD7F32; border-radius: 15px; padding: 15px;'><h3>🥉 AYIN HİJYEN ŞAMPİYONU</h3><p style='font-size: 30px; font-weight: bold; color: #FFFFFF;'>{sampiyon_bul_text(a_df)}</p></div>", unsafe_allow_html=True)
 
-    with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASI"):
+    with st.expander("🏆 AYLIK LİDERLİK TABLOSU"):
         if not a_df.empty:
             sirali = a_df.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False).reset_index()
             for i, row in sirali.iterrows():
@@ -128,21 +128,26 @@ elif sayfa == "📝 Denetçi Girişi":
             with st.form("hassas_form"):
                 st.subheader(f"📍 Denetlenen: {s_sinif}")
                 
+                # 1. Havalandırma
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
                     p1_1 = st.slider("Havalandırma Durumu (0-10)", 0, 10, 0)
                     p1_2 = st.slider("Koku Kontrolü (0-10)", 0, 10, 0)
+                # 2. Masa ve Sıra
                 with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
                     p2_1 = st.slider("Masa Temizliği (0-6)", 0, 6, 0)
                     p2_2 = st.slider("Sıra Altı/Üstü (0-6)", 0, 6, 0)
                     p2_3 = st.slider("Genel Düzen (0-8)", 0, 8, 0)
-                with st.expander("🧹 3. Zemin ve Köşe Temizliği"):
+                # 3. Zemin ve Köşe
+                with st.expander("Sweep 3. Zemin ve Köşe Temizliği"):
                     p3_1 = st.slider("Dip Köşe Temizliği (0-6)", 0, 6, 0)
                     p3_2 = st.slider("Cam Kenarları (0-6)", 0, 6, 0)
                     p3_3 = st.slider("Zemin Temizliği (0-8)", 0, 8, 0)
+                # 4. Çöp
                 with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
                     p4_1 = st.slider("Doğru Kullanım (0-6)", 0, 6, 0)
                     p4_2 = st.slider("Doluluk Oranı (0-6)", 0, 6, 0)
                     p4_3 = st.slider("Çevre Temizliği (0-8)", 0, 8, 0)
+                # 5. Genel
                 with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
                     p5_1 = st.slider("Duvarlar (0-5)", 0, 5, 0)
                     p5_2 = st.slider("Panolar (0-5)", 0, 5, 0)
@@ -172,6 +177,3 @@ elif sayfa == "📊 Yönetici Paneli":
         df = verileri_yukle()
         if not df.empty:
             st.write(df)
-            if st.button("Tüm Verileri Sil (Sıfırla)"):
-                veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
-                st.rerun()
