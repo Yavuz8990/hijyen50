@@ -161,36 +161,15 @@ if sayfa == "🏠 Ana Sayfa":
 
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
+    if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
     
-    if 'denetci_onayli' not in st.session_state: 
-        st.session_state['denetci_onayli'] = False
-    if 'denetci_isim' not in st.session_state:
-        st.session_state['denetci_isim'] = ""
-
     if not st.session_state['denetci_onayli']:
-        d_u = st.text_input("Kullanıcı Adı:")
-        d_p = st.text_input("Şifre:", type="password")
-        
-        # Ad-Soyad girişi sadece giriş ekranında bir kez istenir
-        denetci_ad_soyad = st.text_input("Adınız ve Soyadınız:", placeholder="Örn: Ahmet Yılmaz")
-        
+        d_u = st.text_input("Kullanıcı Adı:"); d_p = st.text_input("Şifre:", type="password")
         if st.button("Sisteme Bağlan"):
             if d_u == DENETCI_USER and d_p == DENETCI_PASS:
-                if denetci_ad_soyad.strip() != "":
-                    st.session_state['denetci_onayli'] = True
-                    st.session_state['denetci_isim'] = denetci_ad_soyad
-                    st.rerun()
-                else:
-                    st.warning("⚠️ Lütfen adınızı ve soyadınızı giriniz.")
-            else:
-                st.error("Geçersiz kullanıcı adı veya şifre.")
-    
+                st.session_state['denetci_onayli'] = True; st.rerun()
     else:
-        # Denetçi ismini üst barda gösterelim
-        st.sidebar.success(f"👤 Denetçi: {st.session_state['denetci_isim']}")
-        
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
-        
         if url_sinif and url_sinif in siniflar:
             with st.form("denetim_formu"):
                 st.subheader(f"📍 Denetlenen Alan: {url_sinif}")
