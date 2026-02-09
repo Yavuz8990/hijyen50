@@ -82,6 +82,12 @@ def sampiyon_bul_text(veri):
     sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
     return f"{', '.join(sampiyonlar)} ({int(en_yuksek)} Puan)"
 
+def kayit_sil(index):
+    df = verileri_yukle()
+    df = df.drop(index)
+    veri_listesini_guncelle(df)
+    st.rerun()
+
 # --- 6. QR KOD VE YÖNLENDİRME ---
 query_params = st.query_params
 url_sinif = query_params.get("sinif", None)
@@ -188,26 +194,59 @@ elif sayfa == "📝 Denetçi Girişi":
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
+    
     if not st.session_state['admin_onayli']:
-        y_u = st.text_input("Yönetici:"); y_p = st.text_input("Şifre:", type="password")
-        if st.button("Giriş"):
-            if y_u == YONETICI_USER and y_p == YONETICI_PASS: st.session_state['admin_onayli'] = True; st.rerun()
+        y_u = st.text_input("Yetkili ID:"); y_p = st.text_input("Şifre:", type="password")
+        if st.button("Veri Erişimini Aç"):
+            if y_u == YONETICI_USER and y_p == YONETICI_PASS:
+                st.session_state['admin_onayli'] = True; st.rerun()
     else:
         df = verileri_yukle()
         if not df.empty:
-            # --- PASTA GRAFİĞİ SADECE BURADA ---
-            st.subheader("📌 Güncel Hijyen Dağılımı")
+            # Pasta Grafiği
+            st.subheader("📌 Günlük Hijyen Dağılımı")
             g_df = df[df['Tarih'] == bugun]
             if not g_df.empty:
-                st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, title="Bugünkü Puan Dağılımı"), use_container_width=True)
-            else:
-                st.info("Bugün için pasta grafik oluşturacak veri henüz yok.")
+                st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, 
+                                     color_discrete_sequence=px.colors.sequential.Tealgrn), use_container_width=True)
             
             st.divider()
-            st.subheader("📂 Kayıtlar")
-            st.write(df)
-            if st.button("Verileri Sıfırla"):
+            st.subheader("📂 Sınıf Bazlı Denetim Kayıtları")
+            
+            # Sınıfları alfabetik sırala
+            sinif_listesi = sorted(df['Sınıf'].unique())
+            
+            for sinif in sinif_listesi:
+                with st.expander(f"🏫 {sinif} Sınıfı Kayıtları"):
+                    # O sınıfa ait verileri çek ve tarihe göre yeniden eskiye sırala
+                    sinif_df = df[df['Sınıf'] == sinif].sort_values(by='Tarih', ascending=False)
+                    
+                    # Tablo başlıkları için sütunlar
+                    h_col1, h_col2, h_col3, h_col4 = st.columns([2, 2, 2, 1])
+                    h_col1.write("**Tarih**")
+                    h_col2.write("**Puan**")
+                    h_col3.write("**Denetçi**")
+                    h_col4.write("**İşlem**")
+                    
+                    for idx, row in sinif_df.iterrows():
+                        r_col1, r_col2, r_col3, r_col4 = st.columns([2, 2, 2, 1])
+                        r_col1.write(f"{row['Tarih']}")
+                        r_col2.write(f"⭐ {row['Puan']}")
+                        r_col3.write(f"👤 {row['Yetkili']}")
+                        # Her satır için benzersiz bir anahtar (key) ile silme butonu
+                        if r_col4.button("Sil", key=f"sil_{idx}"):
+                            kayit_sil(idx)
+                            st.success(f"Kayıt silindi!")
+
+            st.divider()
+            if st.button("🚨 Tüm Sistemi Sıfırla (Kritik)"):
                 veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
                 st.rerun()
+                
+        else:
+            st.info("Henüz kaydedilmiş bir veri bulunmuyor.")
+
+        if st.button("🚪 Güvenli Çıkış"):
+            st.session_state['admin_onayli'] = False; st.rerun()
 
 
