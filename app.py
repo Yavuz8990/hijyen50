@@ -297,10 +297,11 @@ elif sayfa == "📊 Yönetici Paneli":
 
             st.divider()
             
-            # --- YÖNETİM ARAÇLAR ---
+            # --- YÖNETİM ARAÇLARI (DÜZELTİLMİŞ KISIM) ---
             st.subheader("⚙️ Yönetim Araçları")
             
-            col_ Arac1, col_Arac2 = st.columns(2)
+            # BURADAKİ BOŞLUK HATASI GİDERİLDİ:
+            col_Arac1, col_Arac2 = st.columns(2)
             
             with col_Arac1:
                 # DENETÇİ İSMİNİ SIFIRLAMA BUTONU
@@ -308,7 +309,8 @@ elif sayfa == "📊 Yönetici Paneli":
                     if os.path.exists(SESSION_FILE):
                         os.remove(SESSION_FILE)
                         st.session_state['denetci_adi'] = None
-                        st.success("✅ Denetçi hafızası silindi! 'Denetçi Girişi' ekranında isim tekrar sorulacak.")
+                        st.success("✅ Denetçi hafızası silindi! İsim tekrar sorulacak.")
+                        st.rerun()
                     else:
                         st.info("ℹ️ Zaten kayıtlı bir günlük denetçi ismi yok.")
 
@@ -323,5 +325,3 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
-
-
