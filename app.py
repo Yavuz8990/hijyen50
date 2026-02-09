@@ -15,7 +15,7 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. ÖZEL TASARIM (CSS) - TEKNOLOJİK VE KARANLIK TEMA ---
+# --- 3. ÖZEL TASARIM (CSS) ---
 st.markdown("""
     <style>
     /* Slider Çizgisini Sadeleştir */
@@ -24,7 +24,7 @@ st.markdown("""
         height: 6px;
     }
     
-    /* Metinleri ve Rakamları BEYAZ yap (Koyu Arka Planda Görünürlük) */
+    /* Metinleri ve Rakamları BEYAZ yap */
     .stSlider [data-testid="stWidgetLabel"] p, 
     .stSlider div[data-testid="stThumbValue"],
     .stSlider [data-baseweb="slider"] + div div {
@@ -33,14 +33,14 @@ st.markdown("""
         text-shadow: 1px 1px 3px #000000;
     }
 
-    /* Expander başlıklarını BEYAZ yap */
-    .st-emotion-cache-p4mowd {
+    /* Expander başlıklarını düzenle */
+    .streamlit-expanderHeader {
         color: #FFFFFF !important;
         font-weight: bold !important;
         background-color: rgba(0, 210, 255, 0.05);
     }
 
-    /* TEKNOLOJİK SIRALAMA KARTI (Beyaz fon içermez) */
+    /* TEKNOLOJİK SIRALAMA KARTI */
     .rank-card {
         display: flex;
         justify-content: space-between;
@@ -48,7 +48,7 @@ st.markdown("""
         padding: 15px 25px;
         margin: 10px 0;
         border-radius: 12px;
-        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Gece mavisi teknolojik geçiş */
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
         border: 1px solid rgba(0, 210, 255, 0.3);
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
@@ -63,9 +63,12 @@ bugun = guncel_an.date()
 # --- 5. VERİ SİSTEMİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
-        df = pd.read_csv(DB_FILE)
-        df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
-        return df
+        try:
+            df = pd.read_csv(DB_FILE)
+            df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
+            return df
+        except:
+            return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
     return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
 def veri_listesini_guncelle(df):
@@ -78,6 +81,7 @@ if 'veritabani' not in st.session_state:
 def sampiyon_bul_text(veri):
     if veri.empty: return "Henüz Veri Yok"
     skorlar = veri.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False)
+    if skorlar.empty: return "Henüz Veri Yok"
     en_yuksek = skorlar.max()
     sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
     return f"{', '.join(sampiyonlar)} ({int(en_yuksek)} Puan)"
@@ -120,22 +124,22 @@ if sayfa == "🏠 Ana Sayfa":
             for i, row in sirali_liste.iterrows():
                 rank = i + 1
                 color = "#00D2FF"; icon = "🔹"
-                if rank == 1: color = "#FFD700"; icon = "👑" # Altın
-                elif rank == 2: color = "#C0C0C0"; icon = "⭐" # Gümüş
-                elif rank == 3: color = "#CD7F32"; icon = "✨" # Bronz
+                if rank == 1: color = "#FFD700"; icon = "👑"
+                elif rank == 2: color = "#C0C0C0"; icon = "⭐"
+                elif rank == 3: color = "#CD7F32"; icon = "✨"
                 
                 st.markdown(f"""
-                    <div class="rank-card" style="border-left: 8px solid {color};">
-                        <div style="display: flex; align-items: center;">
-                            <span style="font-size: 24px; font-weight: bold; color: {color}; margin-right: 20px;">#{rank}</span>
-                            <span style="font-size: 20px; font-weight: bold; color: white;">{icon} {row['Sınıf']} Sınıfı</span>
-                        </div>
+                   <div class="rank-card" style="border-left: 8px solid {color};">
+                       <div style="display: flex; align-items: center;">
+                           <span style="font-size: 24px; font-weight: bold; color: {color}; margin-right: 20px;">#{rank}</span>
+                           <span style="font-size: 20px; font-weight: bold; color: white;">{icon} {row['Sınıf']} Sınıfı</span>
+                       </div>
                         <div style="text-align: right;">
-                            <span style="font-size: 12px; color: #00D2FF; letter-spacing: 1px;">ORTALAMA SKOR</span>
-                            <span style="font-size: 24px; font-weight: bold; color: white; display: block;">{row['Puan']:.1f}</span>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
+                           <span style="font-size: 12px; color: #00D2FF; letter-spacing: 1px;">ORTALAMA SKOR</span>
+                           <span style="font-size: 24px; font-weight: bold; color: white; display: block;">{row['Puan']:.1f}</span>
+                       </div>
+                   </div>
+               """, unsafe_allow_html=True)
         else:
             st.info("Sıralama verisi henüz toplanmadı.")
 
@@ -163,63 +167,108 @@ elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
     
+    # --- 1. ADIM: ŞİFRE GİRİŞİ ---
     if not st.session_state['denetci_onayli']:
-        d_u = st.text_input("Kullanıcı Adı:"); d_p = st.text_input("Şifre:", type="password")
+        d_u = st.text_input("Kullanıcı Adı:")
+        d_p = st.text_input("Şifre:", type="password")
         if st.button("Sisteme Bağlan"):
             if d_u == DENETCI_USER and d_p == DENETCI_PASS:
-                st.session_state['denetci_onayli'] = True; st.rerun()
+                st.session_state['denetci_onayli'] = True
+                st.rerun()
+            else:
+                st.error("Hatalı kullanıcı adı veya şifre.")
+    
     else:
-        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
-        if url_sinif and url_sinif in siniflar:
-            with st.form("denetim_formu"):
-                st.subheader(f"📍 Denetlenen Alan: {url_sinif}")
+        # --- 2. ADIM: İSİM GİRİŞİ (YENİ EKLENEN KISIM) ---
+        # Eğer session'da isim yoksa sor, varsa devam et
+        if 'denetci_adi' not in st.session_state or not st.session_state['denetci_adi']:
+            st.info("👋 Merhaba! Denetimlere başlamadan önce lütfen kimliğinizi doğrulayın.")
+            
+            with st.form("isim_formu"):
+                girilen_isim = st.text_input("Adınız Soyadınız (Örn: Ahmet Yılmaz):")
+                isim_kaydet = st.form_submit_button("✅ Denetime Başla")
                 
-                # --- Kriterler ---
-                with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
-                    p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
-                    p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
-                with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
-                    p2_1 = st.slider("Masa yüzeyleri temiz (0-6)", 0, 6, 0)
-                    p2_2 = st.slider("Sıra üstünde, altında çöp ve dağınıklık yok (0-6)", 0, 6, 0)
-                    p2_3 = st.slider("Genel masa–sıra düzeni iyi (0-8)", 0, 8, 0)
-                with st.expander("Sweep 3. Zemin ve Köşe Temizliği"):
-                    p3_1 = st.slider("Köşe ve diplerde çöp/toz yok (0-6)", 0, 6, 0)
-                    p3_2 = st.slider("Cam kenarları ve pencere dipleri temiz (0-6)", 0, 6, 0)
-                    p3_3 = st.slider("Zemin genel temizliği güzel (0-8)", 0, 8, 0)
-                with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
-                    p4_1 = st.slider("Çöp kutusu doğru kullanılmış (0-6)", 0, 6, 0)
-                    p4_2 = st.slider("Çöp kutusu taşmamış (0-6)", 0, 6, 0)
-                    p4_3 = st.slider("Çöp kutusu çevresi temiz (0-8)", 0, 8, 0)
-                with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
-                    p5_1 = st.slider("Duvarlarda kir, yazı ve düzensizlik yok (0-5)", 0, 5, 0)
-                    p5_2 = st.slider("Panolar karışık ve dağınık değil (0-5)", 0, 5, 0)
-                    p5_3 = st.slider("Tahta silinmiş, gereksiz yazı yok (0-5)", 0, 5, 0)
-                    p5_4 = st.slider("Sınıfın genel görünümü güzel (0-5)", 0, 5, 0)
-
-                # Kaydet butonu tıklandığında kontrol yap
-                if st.form_submit_button("💾 DEĞERLENDİRMEYİ MÜHÜRLE"):
-                    df = verileri_yukle()
-                    
-                    # KRİTİK KONTROL: Bugün bu sınıf için kayıt var mı?
-                    zaten_yapildi_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == url_sinif)]
-                    
-                    if not zaten_yapildi_mi.empty:
-                        st.error(f"⚠️ DİKKAT: {url_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış! Günde sadece 1 kayıt girebilirsiniz.")
+                if isim_kaydet:
+                    if len(girilen_isim) > 2:
+                        st.session_state['denetci_adi'] = girilen_isim
+                        st.rerun()
                     else:
-                        toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
-                        yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": url_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
-                        veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                        st.success(f"Kayıt Başarıyla Tamamlandı! Skor: {toplam}")
-                        st.balloons()
+                        st.warning("Lütfen geçerli bir isim giriniz.")
+            
+            st.stop() # İsim girilmeden aşağıdaki kodları çalıştırma
+            
+        # --- 3. ADIM: DENETİM FORMU ---
+        st.success(f"👤 Aktif Denetçi: **{st.session_state['denetci_adi']}**")
+        
+        siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
+        
+        # Eğer URL'den sınıf gelmediyse seçim kutusu göster
+        secilen_sinif = url_sinif
+        if not secilen_sinif:
+            secilen_sinif = st.selectbox("Lütfen Denetlenecek Sınıfı Seçiniz:", ["Seçiniz..."] + siniflar)
+
+        if secilen_sinif and secilen_sinif != "Seçiniz...":
+            if secilen_sinif in siniflar:
+                with st.form("denetim_formu"):
+                    st.subheader(f"📍 Denetlenen Alan: {secilen_sinif}")
+                    
+                    # --- Kriterler ---
+                    with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
+                        p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
+                        p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
+                    with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
+                        p2_1 = st.slider("Masa yüzeyleri temiz (0-6)", 0, 6, 0)
+                        p2_2 = st.slider("Sıra üstünde, altında çöp ve dağınıklık yok (0-6)", 0, 6, 0)
+                        p2_3 = st.slider("Genel masa–sıra düzeni iyi (0-8)", 0, 8, 0)
+                    with st.expander("🧹 3. Zemin ve Köşe Temizliği"):
+                        p3_1 = st.slider("Köşe ve diplerde çöp/toz yok (0-6)", 0, 6, 0)
+                        p3_2 = st.slider("Cam kenarları ve pencere dipleri temiz (0-6)", 0, 6, 0)
+                        p3_3 = st.slider("Zemin genel temizliği güzel (0-8)", 0, 8, 0)
+                    with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
+                        p4_1 = st.slider("Çöp kutusu doğru kullanılmış (0-6)", 0, 6, 0)
+                        p4_2 = st.slider("Çöp kutusu taşmamış (0-6)", 0, 6, 0)
+                        p4_3 = st.slider("Çöp kutusu çevresi temiz (0-8)", 0, 8, 0)
+                    with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
+                        p5_1 = st.slider("Duvarlarda kir, yazı ve düzensizlik yok (0-5)", 0, 5, 0)
+                        p5_2 = st.slider("Panolar karışık ve dağınık değil (0-5)", 0, 5, 0)
+                        p5_3 = st.slider("Tahta silinmiş, gereksiz yazı yok (0-5)", 0, 5, 0)
+                        p5_4 = st.slider("Sınıfın genel görünümü güzel (0-5)", 0, 5, 0)
+
+                    # Kaydet butonu
+                    if st.form_submit_button("💾 DEĞERLENDİRMEYİ MÜHÜRLE"):
+                        df = verileri_yukle()
+                        
+                        # KRİTİK KONTROL: Bugün bu sınıf için kayıt var mı?
+                        zaten_yapildi_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == secilen_sinif)]
+                        
+                        if not zaten_yapildi_mi.empty:
+                            st.error(f"⚠️ DİKKAT: {secilen_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış! Günde sadece 1 kayıt girebilirsiniz.")
+                        else:
+                            toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
+                            
+                            # BURADA YETKİLİ KISMINA ARTIK İSİM KAYDEDİLİYOR
+                            yeni = pd.DataFrame([{
+                                "Tarih": bugun, 
+                                "Sınıf": secilen_sinif, 
+                                "Puan": toplam, 
+                                "Yetkili": st.session_state['denetci_adi'] # Değişen kısım burası
+                            }])
+                            
+                            veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
+                            st.success(f"Kayıt Başarıyla Tamamlandı! Skor: {toplam}")
+                            st.balloons()
+            else:
+                st.warning("Geçersiz Sınıf Seçimi")
         else:
-            st.warning("⚠️ Lütfen geçerli bir sınıf QR kodu okutunuz.")
+            st.info("Lütfen bir sınıf seçiniz veya QR kodu okutunuz.")
 
 elif sayfa == "📊 Yönetici Paneli":
     st.title("📊 Yönetici Analiz Merkezi")
     if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
     
     if not st.session_state['admin_onayli']:
-        y_u = st.text_input("Yetkili ID:"); y_p = st.text_input("Şifre:", type="password")
+        y_u = st.text_input("Yetkili ID:")
+        y_p = st.text_input("Şifre:", type="password")
         if st.button("Veri Erişimini Aç"):
             if y_u == YONETICI_USER and y_p == YONETICI_PASS:
                 st.session_state['admin_onayli'] = True; st.rerun()
@@ -231,7 +280,7 @@ elif sayfa == "📊 Yönetici Paneli":
             g_df = df[df['Tarih'] == bugun]
             if not g_df.empty:
                 st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, 
-                                     color_discrete_sequence=px.colors.sequential.Tealgrn), use_container_width=True)
+                                    color_discrete_sequence=px.colors.sequential.Tealgrn), use_container_width=True)
             
             st.divider()
             st.subheader("📂 Sınıf Bazlı Denetim Kayıtları")
@@ -248,14 +297,14 @@ elif sayfa == "📊 Yönetici Paneli":
                     h_col1, h_col2, h_col3, h_col4 = st.columns([2, 2, 2, 1])
                     h_col1.write("**Tarih**")
                     h_col2.write("**Puan**")
-                    h_col3.write("**Denetçi**")
+                    h_col3.write("**Denetçi**") # Burası artık girilen ismi gösterecek
                     h_col4.write("**İşlem**")
                     
                     for idx, row in sinif_df.iterrows():
                         r_col1, r_col2, r_col3, r_col4 = st.columns([2, 2, 2, 1])
                         r_col1.write(f"{row['Tarih']}")
                         r_col2.write(f"⭐ {row['Puan']}")
-                        r_col3.write(f"👤 {row['Yetkili']}")
+                        r_col3.write(f"👤 {row['Yetkili']}") 
                         # Her satır için benzersiz bir anahtar (key) ile silme butonu
                         if r_col4.button("Sil", key=f"sil_{idx}"):
                             kayit_sil(idx)
@@ -271,7 +320,3 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
-
-
-
-
