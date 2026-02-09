@@ -315,86 +315,6 @@ elif sayfa == "📊 Yönetici Paneli":
 
             st.divider()
 
-            st.subheader("📈 Performans Analizi")
-            
-            with st.expander("📊 DETAYLI HİJYEN KARNELERİNİ GÖRÜNTÜLE", expanded=False):
-                st.info("Aşağıdaki butonlara tıklayarak sınıfların güçlü ve zayıf yönlerini analiz edebilirsiniz. (Veriler son 30 günün ortalamasıdır)")
-                
-                # Son 30 günün verisini al
-                analiz_df = df[df['Tarih'] >= (bugun - timedelta(days=30))]
-                
-                if not analiz_df.empty:
-                    siniflar = sorted(analiz_df['Sınıf'].unique())
-                    
-                    # Her sınıf için döngü
-                    for sinif in siniflar:
-                        s_veri = analiz_df[analiz_df['Sınıf'] == sinif]
-                        
-                        # Eğer detay verisi yoksa (eski kayıtsa) analiz yapma
-                        if s_veri['K1_Hava'].sum() == 0 and s_veri['Puan'].sum() > 0:
-                            continue
-
-                        # Ortalamaları Al
-                        ort_k1 = s_veri['K1_Hava'].mean()
-                        ort_k2 = s_veri['K2_Masa'].mean()
-                        ort_k3 = s_veri['K3_Zemin'].mean()
-                        ort_k4 = s_veri['K4_Cop'].mean()
-                        ort_k5 = s_veri['K5_Genel'].mean()
-                        genel_ort = s_veri['Puan'].mean()
-                        
-                        # --- SINIF BUTONU (EXPANDER) ---
-                        with st.expander(f"🔎 {sinif} SINIFI KARNESİ (Ort: {genel_ort:.1f})"):
-                            
-                            col_analiz1, col_analiz2 = st.columns([2, 1])
-                            
-                            # SOL TARAF: RADAR GRAFİĞİ
-                            with col_analiz1:
-                                kategoriler = ['Havalandırma', 'Masa/Sıra', 'Zemin/Köşe', 'Çöp Kutusu', 'Genel Yüzey']
-                                degerler = [ort_k1, ort_k2, ort_k3, ort_k4, ort_k5]
-                                
-                                # Grafik verisi
-                                df_radar = pd.DataFrame(dict(
-                                    Puan=degerler,
-                                    Kriter=kategoriler
-                                ))
-                                
-                                fig = px.line_polar(df_radar, r='Puan', theta='Kriter', line_close=True, range_r=[0, 20])
-                                fig.update_traces(fill='toself', line_color='#00D2FF')
-                                fig.update_layout(
-                                    paper_bgcolor="rgba(0,0,0,0)",
-                                    plot_bgcolor="rgba(0,0,0,0)",
-                                    font_color="white",
-                                    margin=dict(l=40, r=40, t=20, b=20)
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-
-                            # SAĞ TARAF: YORUM VE İSTATİSTİK
-                            with col_analiz2:
-                                # Sözlük oluşturup en büyük/küçük bulma
-                                puanlar = {
-                                    '🌬️ Havalandırma': ort_k1,
-                                    '🪑 Masa Düzeni': ort_k2,
-                                    '🧹 Zemin': ort_k3,
-                                    '🗑️ Atık Yönetimi': ort_k4,
-                                    '✨ Genel Temizlik': ort_k5
-                                }
-                                
-                                en_iyi_konu = max(puanlar, key=puanlar.get)
-                                en_kotu_konu = min(puanlar, key=puanlar.get)
-                                
-                                st.markdown("### 📝 Karne Yorumu")
-                                
-                                # İYİ OLAN
-                                st.success(f"**👏 En İyi Olduğu Alan:**\n\n{en_iyi_konu}\n\n**(Puan: {puanlar[en_iyi_konu]:.1f} / 20)**")
-                                
-                                # KÖTÜ OLAN
-                                if puanlar[en_kotu_konu] < 14:
-                                    st.error(f"**⚠️ Acil Düzelmesi Gereken:**\n\n{en_kotu_konu}\n\n**(Puan: {puanlar[en_kotu_konu]:.1f} / 20)**")
-                                else:
-                                    st.warning(f"**🔧 Geliştirilebilir Alan:**\n\n{en_kotu_konu}\n\n**(Puan: {puanlar[en_kotu_konu]:.1f} / 20)**")
-
-                else:
-                    st.warning("Analiz için yeterli veri bulunamadı.")
             # --- 2. PASTA GRAFİĞİ ---
             st.subheader("📌 Günlük Hijyen Dağılımı")
             g_df = df[df['Tarih'] == bugun]
@@ -457,6 +377,5 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
-
 
 
