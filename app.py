@@ -11,6 +11,7 @@ DENETCI_PASS = "Opet2026"
 YONETICI_USER = "mudur"
 YONETICI_PASS = "Hijyen2026"
 DB_FILE = "denetimler.csv"
+SESSION_FILE = "gunluk_denetci.txt"  # İsim hafızası için dosya
 
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
@@ -18,66 +19,64 @@ st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼",
 # --- 3. ÖZEL TASARIM (CSS) ---
 st.markdown("""
     <style>
-    /* Slider Çizgisini Sadeleştir */
-    .stSlider [data-baseweb="slider"] > div:first-child {
-        background-color: #1E1E1E !important;
-        height: 6px;
+    .stSlider [data-baseweb="slider"] > div:first-child { background-color: #1E1E1E !important; height: 6px; }
+    .stSlider [data-testid="stWidgetLabel"] p, .stSlider div[data-testid="stThumbValue"], .stSlider [data-baseweb="slider"] + div div {
+        color: #FFFFFF !important; font-weight: bold !important; text-shadow: 1px 1px 3px #000000;
     }
-    
-    /* Metinleri ve Rakamları BEYAZ yap */
-    .stSlider [data-testid="stWidgetLabel"] p, 
-    .stSlider div[data-testid="stThumbValue"],
-    .stSlider [data-baseweb="slider"] + div div {
-        color: #FFFFFF !important;
-        font-weight: bold !important;
-        text-shadow: 1px 1px 3px #000000;
-    }
-
-    /* Expander başlıklarını düzenle */
-    .streamlit-expanderHeader {
-        color: #FFFFFF !important;
-        font-weight: bold !important;
-        background-color: rgba(0, 210, 255, 0.05);
-    }
-
-    /* TEKNOLOJİK SIRALAMA KARTI */
+    .streamlit-expanderHeader { color: #FFFFFF !important; font-weight: bold !important; background-color: rgba(0, 210, 255, 0.05); }
     .rank-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 25px;
-        margin: 10px 0;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-        border: 1px solid rgba(0, 210, 255, 0.3);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin: 10px 0;
+        border-radius: 12px; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        border: 1px solid rgba(0, 210, 255, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. TÜRKİYE SAATİ ---
+# --- 4. ZAMAN VE YARDIMCI FONKSİYONLAR ---
 tr_timezone = pytz.timezone('Europe/Istanbul')
 guncel_an = datetime.now(tr_timezone)
 bugun = guncel_an.date()
 
-# --- 5. VERİ SİSTEMİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
         try:
             df = pd.read_csv(DB_FILE)
             df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
             return df
-        except:
-            return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
+        except: return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
     return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
 def veri_listesini_guncelle(df):
     df.to_csv(DB_FILE, index=False)
     st.session_state['veritabani'] = df
 
-if 'veritabani' not in st.session_state:
-    st.session_state['veritabani'] = verileri_yukle()
+# --- GÜNLÜK DENETÇİ HAFIZA SİSTEMİ (YENİ) ---
+def gunluk_denetci_getir():
+    """Bugün için kaydedilmiş bir denetçi varsa ismini döndürür, yoksa None döner."""
+    if os.path.exists(SESSION_FILE):
+        try:
+            with open(SESSION_FILE, "r", encoding="utf-8") as f:
+                icerik = f.read().strip().split("|")
+                if len(icerik) == 2:
+                    kayitli_tarih = icerik[0]
+                    kayitli_isim = icerik[1]
+                    # Eğer dosyadaki tarih bugüne eşitse ismi kullan
+                    if kayitli_tarih == str(bugun):
+                        return kayitli_isim
+        except: pass
+    return None
 
+def gunluk_denetci_kaydet(isim):
+    """Denetçi ismini bugünün tarihiyle dosyaya yazar."""
+    with open(SESSION_FILE, "w", encoding="utf-8") as f:
+        f.write(f"{bugun}|{isim}")
+
+# Session State Başlatma
+if 'veritabani' not in st.session_state: st.session_state['veritabani'] = verileri_yukle()
+if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
+if 'denetci_adi' not in st.session_state: st.session_state['denetci_adi'] = None
+
+# --- DİĞER FONKSİYONLAR ---
 def sampiyon_bul_text(veri):
     if veri.empty: return "Henüz Veri Yok"
     skorlar = veri.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False)
@@ -107,7 +106,6 @@ if sayfa == "🏠 Ana Sayfa":
     df_genel = verileri_yukle()
     st.markdown("""<div style='text-align: center;'><h1 style='color: #00D2FF; font-size: 60px; margin-bottom: 0px;'>HİJYEN 5.0</h1></div>""", unsafe_allow_html=True)
 
-    # --- AYLIK DEĞERLENDİRME ---
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
     
     st.markdown(f"""
@@ -117,8 +115,7 @@ if sayfa == "🏠 Ana Sayfa":
         </div>
     """, unsafe_allow_html=True)
 
-    # --- TEKNOLOJİK LİDERLİK TABLOSU ---
-    with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASINI GÖR (TÜM SINIFLAR)"):
+    with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASINI GÖR"):
         if not a_df.empty:
             sirali_liste = a_df.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False).reset_index()
             for i, row in sirali_liste.iterrows():
@@ -127,7 +124,6 @@ if sayfa == "🏠 Ana Sayfa":
                 if rank == 1: color = "#FFD700"; icon = "👑"
                 elif rank == 2: color = "#C0C0C0"; icon = "⭐"
                 elif rank == 3: color = "#CD7F32"; icon = "✨"
-                
                 st.markdown(f"""
                    <div class="rank-card" style="border-left: 8px solid {color};">
                        <div style="display: flex; align-items: center;">
@@ -135,39 +131,26 @@ if sayfa == "🏠 Ana Sayfa":
                            <span style="font-size: 20px; font-weight: bold; color: white;">{icon} {row['Sınıf']} Sınıfı</span>
                        </div>
                         <div style="text-align: right;">
-                           <span style="font-size: 12px; color: #00D2FF; letter-spacing: 1px;">ORTALAMA SKOR</span>
+                           <span style="font-size: 12px; color: #00D2FF;">ORTALAMA SKOR</span>
                            <span style="font-size: 24px; font-weight: bold; color: white; display: block;">{row['Puan']:.1f}</span>
                        </div>
                    </div>
                """, unsafe_allow_html=True)
-        else:
-            st.info("Sıralama verisi henüz toplanmadı.")
-
+        else: st.info("Sıralama verisi henüz toplanmadı.")
+    
     st.write("---")
-
-    # --- GÜNÜN SÖZÜ ---
-    sozler = [
-        "🧼 'Temizlik, sağlıktan önce gelir; çünkü sağlığın koruyucusudur.'",
-        "✨ 'Geleceğin temiz okulu, bugünün bilinçli adımlarıyla inşa edilir.'",
-        "🧪 'Hijyen bir tercih değil, toplumun her ferdine olan sorumluluğumuzdur.'",
-        "🌊 'Büyük değişimler, küçük bir temizlik alışkanlığıyla başlar.'",
-        "🛡️ 'Görünmez tehlikelere karşı en güçlü kalkanımız: Hijyen.'",
-        "📚 'Eğitim sadece kitaplarla değil, sağlıklı bir çevreyle hayat bulur.'",
-        "💎 'Temizlik, başarının aynasıdır; parlayan bir gelecek temiz sınıflarda yetişir.'"
-    ]
+    sozler = ["🧼 Temizlik sağlıktır.", "✨ Gelecek temiz sınıflarda başlar.", "🧪 Hijyen sorumluluktur.", "🌊 Değişim temizlikle başlar.", "🛡️ Mikroplara karşı kalkan ol.", "📚 Temiz okul, temiz zihin.", "💎 Parlayan bir gelecek için."]
     st.markdown(f"<div style='text-align: center; margin-bottom: 15px;'><p style='font-size: 28px; color: #00D2FF; font-style: italic; font-weight: bold;'>{sozler[bugun.day % 7]}</p></div>", unsafe_allow_html=True)
 
-    # --- AFİŞ ---
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try: st.image("afis.jpg", use_container_width=True)
-        except: st.warning("Afiş dosyası bulunamadı.")
+        except: pass
 
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
-    if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
     
-    # --- 1. ADIM: ŞİFRE GİRİŞİ ---
+    # --- 1. SİSTEM GİRİŞİ (Şifre) ---
     if not st.session_state['denetci_onayli']:
         d_u = st.text_input("Kullanıcı Adı:")
         d_p = st.text_input("Şifre:", type="password")
@@ -175,27 +158,29 @@ elif sayfa == "📝 Denetçi Girişi":
             if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                 st.session_state['denetci_onayli'] = True
                 st.rerun()
-            else:
-                st.error("Hatalı kullanıcı adı veya şifre.")
-    
+            else: st.error("Hatalı giriş.")
     else:
-        # --- 2. ADIM: İSİM GİRİŞİ (YENİ EKLENEN KISIM) ---
-        # Eğer session'da isim yoksa sor, varsa devam et
-        if 'denetci_adi' not in st.session_state or not st.session_state['denetci_adi']:
-            st.info("👋 Merhaba! Denetimlere başlamadan önce lütfen kimliğinizi doğrulayın.")
-            
+        # --- 2. İSİM KONTROLÜ (OTOMATİK HAFIZA) ---
+        
+        # Önce dosyadan bugünün ismini çekmeyi dene
+        if st.session_state['denetci_adi'] is None:
+            kayitli_isim = gunluk_denetci_getir()
+            if kayitli_isim:
+                st.session_state['denetci_adi'] = kayitli_isim
+                st.success(f"🗓️ Bugünün nöbetçi denetçisi **{kayitli_isim}** olarak tanımlandı.")
+        
+        # Hâlâ isim yoksa (dosyada yoksa) sor ve kaydet
+        if st.session_state['denetci_adi'] is None:
+            st.info("👋 Merhaba! Bugünün denetimlerini kim yapacak?")
             with st.form("isim_formu"):
-                girilen_isim = st.text_input("Adınız Soyadınız (Örn: Ahmet Yılmaz):")
-                isim_kaydet = st.form_submit_button("✅ Denetime Başla")
-                
-                if isim_kaydet:
+                girilen_isim = st.text_input("Adınız Soyadınız:")
+                if st.form_submit_button("✅ Görevi Başlat"):
                     if len(girilen_isim) > 2:
+                        gunluk_denetci_kaydet(girilen_isim) # Dosyaya yaz (Bugün için hatırla)
                         st.session_state['denetci_adi'] = girilen_isim
                         st.rerun()
-                    else:
-                        st.warning("Lütfen geçerli bir isim giriniz.")
-            
-            st.stop() # İsim girilmeden aşağıdaki kodları çalıştırma
+                    else: st.warning("Lütfen geçerli bir isim giriniz.")
+            st.stop() # İsim girilmeden aşağı geçme
             
         # --- 3. ADIM: DENETİM FORMU ---
         st.success(f"👤 Aktif Denetçi: **{st.session_state['denetci_adi']}**")
@@ -320,3 +305,4 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
+
