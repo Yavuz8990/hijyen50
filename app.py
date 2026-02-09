@@ -15,7 +15,7 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. DİNAMİK TASARIM VE SİYAH RAKAM DÜZENLEMESİ (CSS) ---
+# --- 3. DİNAMİK TASARIM VE BEYAZ METİN DÜZENLEMESİ (CSS) ---
 st.markdown("""
     <style>
     /* Slider doluluk rengini kırmızıdan maviye gradyan yapar */
@@ -25,29 +25,33 @@ st.markdown("""
         border-radius: 6px;
     }
     
-    /* Slider üzerindeki ana başlıkları SİYAH ve KALIN yapar */
+    /* Slider üzerindeki ana başlıkları BEYAZ ve KALIN yapar */
     .stSlider [data-testid="stWidgetLabel"] p {
-        color: #000000 !important;
+        color: #FFFFFF !important;
         font-weight: bold !important;
         font-size: 16px !important;
+        text-shadow: 1px 1px 2px #000000;
     }
     
-    /* Slider'ın o anki değerini (rakamı) SİYAH ve KALIN yapar */
+    /* Slider'ın hareket eden değerini (rakamı) BEYAZ ve KALIN yapar */
     .stSlider div[data-testid="stThumbValue"] {
-        color: #000000 !important;
+        color: #FFFFFF !important;
         font-weight: bold !important;
-        font-size: 18px !important;
+        font-size: 20px !important;
+        background-color: #00D2FF;
+        padding: 2px 8px;
+        border-radius: 5px;
     }
 
-    /* Slider'ın altındaki sınır rakamlarını (0, 10 vb.) SİYAH yapar */
+    /* Slider'ın altındaki sınır rakamlarını (0, 10 vb.) BEYAZ yapar */
     .stSlider [data-baseweb="slider"] + div div {
-        color: #000000 !important;
+        color: #FFFFFF !important;
         font-weight: bold !important;
     }
 
-    /* Genel metinlerin okunabilirliği */
-    .stMarkdown p {
-        font-weight: 500;
+    /* Expander (Açılır Kutu) başlıklarını beyaz yapar */
+    .st-emotion-cache-p4mowd {
+        color: #FFFFFF !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -107,7 +111,7 @@ if sayfa == "🏠 Ana Sayfa":
         </div>
     """, unsafe_allow_html=True)
 
-    with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASINI GÖR (TÜM SINIFLAR)"):
+    with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASI"):
         if not a_df.empty:
             sirali_liste = a_df.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False).reset_index()
             for i, row in sirali_liste.iterrows():
@@ -119,25 +123,15 @@ if sayfa == "🏠 Ana Sayfa":
                 elif rank == 3: color = "#CD7F32"; icon = "✨"
                 
                 st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin: 8px 0; border-radius: 12px; border-left: 8px solid {color}; background: rgba(0,210,255,0.05); border: 1px solid {color};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin: 8px 0; border-radius: 12px; border-left: 8px solid {color}; background: rgba(255,255,255,0.05); border: 1px solid {color};">
                         <span style="font-size: 20px; font-weight: bold; color: white;">#{rank} {icon} {row['Sınıf']} Sınıfı</span>
                         <span style="font-size: 22px; font-weight: bold; color: white;">{row['Puan']:.1f}</span>
                     </div>
                 """, unsafe_allow_html=True)
-        else:
-            st.info("Sıralama için henüz yeterli veri toplanmadı.")
 
     st.write("---")
-    
-    # GÜNÜN SÖZÜ (FOTOĞRAFIN ÜSTÜNDE)
-    sozler = [
-        "🧼 'Temizlik, sağlıktan önce gelir; çünkü sağlığın koruyucusudur.'",
-        "✨ 'Geleceğin temiz okulu, bugünün bilinçli adımlarıyla inşa edilir.'",
-        "🧪 'Hijyen bir tercih değil, toplumun her ferdine olan sorumluluğumuzdur.'",
-        "💎 'Temizlik, başarının aynasıdır; parlayan bir gelecek temiz sınıflarda yetişir.'"
-    ]
-    secilen_soz = sozler[bugun.day % 4]
-    st.markdown(f"<div style='text-align: center; margin-bottom: 20px;'><p style='font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold;'>{secilen_soz}</p></div>", unsafe_allow_html=True)
+    sozler = ["🧼 'Temizlik, sağlıktan önce gelir.'", "✨ 'Geleceğin temiz okulu, bugünle başlar.'", "💎 'Hijyen başarının aynasıdır.'"]
+    st.markdown(f"<div style='text-align: center;'><p style='font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold;'>{sozler[bugun.day % 3]}</p></div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -151,7 +145,7 @@ elif sayfa == "📝 Denetçi Girişi":
 
     if not st.session_state['denetci_onayli']:
         with st.container(border=True):
-            if url_sinif: st.success(f"📱 QR Okutuldu: {url_sinif} sınıfı için giriş yapınız.")
+            if url_sinif: st.success(f"📱 QR Okutuldu: {url_sinif}")
             d_u = st.text_input("Kullanıcı Adı:", key="d_u")
             d_p = st.text_input("Şifre:", type="password", key="d_p")
             if st.button("Sisteme Giriş Yap"):
@@ -160,7 +154,7 @@ elif sayfa == "📝 Denetçi Girişi":
                     st.rerun()
                 else: st.error("❌ Hatalı Giriş!")
     else:
-        st.success(f"🔓 Yetkili Girişi Başarılı: {DENETCI_USER}")
+        st.success(f"🔓 Hoş geldiniz: {DENETCI_USER}")
         siniflar = ["9A", "9B", "9C", "10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"]
         
         if url_sinif and url_sinif in siniflar:
@@ -199,14 +193,14 @@ elif sayfa == "📝 Denetçi Girişi":
                     toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
                     df = verileri_yukle()
                     if not df[(df['Tarih'] == bugun) & (df['Sınıf'] == s_sinif)].empty:
-                        st.error("❌ HATA: Bugün zaten kayıt yapılmış!")
+                        st.error("❌ Bugün zaten kayıt yapılmış!")
                     else:
                         yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": s_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
                         veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                        st.success(f"✅ Başarılı! Toplam Puan: {toplam}")
+                        st.success(f"✅ Başarılı! Puan: {toplam}")
                         st.balloons()
         else:
-            st.error("⚠️ HATA: Lütfen kapıdaki karekodu okutarak giriş yapınız.")
+            st.error("⚠️ Lütfen kapıdaki karekodu okutarak giriş yapınız.")
 
         if st.button("🚪 Oturumu Kapat"):
             st.session_state['denetci_onayli'] = False
@@ -235,7 +229,7 @@ elif sayfa == "📊 Yönetici Paneli":
                 if not g_df.empty: st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4), use_container_width=True)
             
             st.divider()
-            st.subheader("📂 Sınıf Kayıt Yönetimi")
+            st.subheader("📂 Kayıt Yönetimi")
             for sinif in sorted(df['Sınıf'].unique()):
                 with st.expander(f"🏫 {sinif} Arşivi"):
                     s_df = df[df['Sınıf'] == sinif]
