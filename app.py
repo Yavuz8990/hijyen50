@@ -15,7 +15,7 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. DİNAMİK TASARIM VE BEYAZ METİN DÜZENLEMESİ (CSS) ---
+# --- 3. DİNAMİK TASARIM VE BEYAZ RAKAM DÜZENLEMESİ (CSS) ---
 st.markdown("""
     <style>
     /* Slider doluluk rengini kırmızıdan maviye gradyan yapar */
@@ -33,14 +33,13 @@ st.markdown("""
         text-shadow: 1px 1px 2px #000000;
     }
     
-    /* Slider'ın hareket eden değerini (rakamı) BEYAZ ve KALIN yapar */
+    /* HAREKET EDEN RAKAM (THUMB VALUE) - BEYAZ YAPILDI */
     .stSlider div[data-testid="stThumbValue"] {
         color: #FFFFFF !important;
         font-weight: bold !important;
-        font-size: 20px !important;
-        background-color: #00D2FF;
-        padding: 2px 8px;
-        border-radius: 5px;
+        font-size: 22px !important;
+        background-color: transparent !important; /* Arka planı temizledik */
+        text-shadow: 0px 0px 5px #000000; /* Görünürlük için hafif gölge */
     }
 
     /* Slider'ın altındaki sınır rakamlarını (0, 10 vb.) BEYAZ yapar */
@@ -49,7 +48,7 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* Expander (Açılır Kutu) başlıklarını beyaz yapar */
+    /* Expander başlık yazılarını beyaz yapar */
     .st-emotion-cache-p4mowd {
         color: #FFFFFF !important;
     }
@@ -85,7 +84,7 @@ def sampiyon_bul_text(veri):
     sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
     return f"{', '.join(sampiyonlar)} ({int(en_yuksek)} Puan)"
 
-# --- 7. QR KOD VE OTOMATİK YÖNLENDİRME ---
+# --- 7. QR KOD VE YÖNLENDİRME ---
 query_params = st.query_params
 url_sinif = query_params.get("sinif", None)
 default_index = 1 if url_sinif else 0 
