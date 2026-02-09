@@ -16,7 +16,6 @@ DB_FILE = "denetimler.csv"
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
 # --- 3. ÖZEL TASARIM (CSS) ---
-# Sadece beyaz metin odaklı, slider çubuğuna müdahale etmeyen sade yapı
 st.markdown("""
     <style>
     /* Slider başlıklarını, rakamları ve hareket eden sayıyı BEYAZ yap */
@@ -26,6 +25,7 @@ st.markdown("""
         color: #FFFFFF !important;
         font-weight: bold !important;
         font-size: 16px !important;
+        text-shadow: 1px 1px 2px #000000;
     }
 
     /* Expander başlık yazılarını BEYAZ yap */
@@ -34,8 +34,8 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* Sayfa başlıkları ve alt başlıklar */
-    h1, h2, h3, .stSubheader p {
+    /* Sayfa ve form başlıkları */
+    h1, h2, h3, .stSubheader p, .stMarkdown p {
         color: #FFFFFF !important;
     }
     </style>
@@ -46,14 +46,13 @@ tr_timezone = pytz.timezone('Europe/Istanbul')
 guncel_an = datetime.now(tr_timezone)
 bugun = guncel_an.date()
 
-# --- 5. VERİ SİSTEMİ FONKSİYONLARI ---
+# --- 5. VERİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
         df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
         return df
-    else:
-        return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
+    return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
 def veri_listesini_guncelle(df):
     df.to_csv(DB_FILE, index=False)
@@ -62,7 +61,6 @@ def veri_listesini_guncelle(df):
 if 'veritabani' not in st.session_state:
     st.session_state['veritabani'] = verileri_yukle()
 
-# --- 6. ŞAMPİYON HESAPLAMA ---
 def sampiyon_bul_text(veri):
     if veri.empty: return "Veri bekleniyor..."
     skorlar = veri.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False)
@@ -70,7 +68,7 @@ def sampiyon_bul_text(veri):
     sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
     return f"{', '.join(sampiyonlar)} ({int(en_yuksek)} Puan)"
 
-# --- 7. YAN MENÜ ---
+# --- 6. YAN MENÜ ---
 query_params = st.query_params
 url_sinif = query_params.get("sinif", None)
 default_index = 1 if url_sinif else 0 
@@ -78,7 +76,7 @@ default_index = 1 if url_sinif else 0
 st.sidebar.title("💎 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"], index=default_index)
 
-# --- 8. SAYFA İÇERİKLERİ ---
+# --- 7. SAYFA İÇERİKLERİ ---
 
 if sayfa == "🏠 Ana Sayfa":
     df_genel = verileri_yukle()
@@ -116,26 +114,35 @@ elif sayfa == "📝 Denetçi Girişi":
             with st.form("hassas_form"):
                 st.subheader(f"📍 Denetlenen Sınıf: {s_sinif}")
                 
+                # 1. Havalandırma ve Hava Kalitesi
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
-                    p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0, key="h1")
-                    p1_2 = st.slider("Sınıfta ağır koku yok (0-10)", 0, 10, 0, key="h2")
+                    p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
+                    p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
+                
+                # 2. Sınıf ve Masa Temizliği
                 with st.expander("🪑 2. Sınıf ve Masa Temizliği"):
-                    p2_1 = st.slider("Masa Temizliği (0-6)", 0, 6, 0, key="h3")
-                    p2_2 = st.slider("Sıra Altı/Üstü (0-6)", 0, 6, 0, key="h4")
-                    p2_3 = st.slider("Genel Düzen (0-8)", 0, 8, 0, key="h5")
+                    p2_1 = st.slider("Masa yüzeyleri temiz (0-6)", 0, 6, 0)
+                    p2_2 = st.slider("Sıra üstünde, altında çöp ve dağınıklık yok (0-6)", 0, 6, 0)
+                    p2_3 = st.slider("Genel masa–sıra düzeni iyi (0-8)", 0, 8, 0)
+                
+                # 3. Zemin ve Köşe Temizliği
                 with st.expander("🧹 3. Zemin ve Köşe Temizliği"):
-                    p3_1 = st.slider("Dip Köşe Temizliği (0-6)", 0, 6, 0, key="h6")
-                    p3_2 = st.slider("Cam Kenarları (0-6)", 0, 6, 0, key="h7")
-                    p3_3 = st.slider("Zemin Temizliği (0-8)", 0, 8, 0, key="h8")
+                    p3_1 = st.slider("Köşe ve diplerde çöp/toz yok (0-6)", 0, 6, 0)
+                    p3_2 = st.slider("Cam kenarları ve pencere dipleri temiz (0-6)", 0, 6, 0)
+                    p3_3 = st.slider("Zemin genel temizliği güzel (0-8)", 0, 8, 0)
+                
+                # 4. Çöp Kutusu ve Atık Yönetimi
                 with st.expander("🗑️ 4. Çöp Kutusu ve Atık Yönetimi"):
-                    p4_1 = st.slider("Doğru Kullanım (0-6)", 0, 6, 0, key="h9")
-                    p4_2 = st.slider("Doluluk Oranı (0-6)", 0, 6, 0, key="h10")
-                    p4_3 = st.slider("Çevre Temizliği (0-8)", 0, 8, 0, key="h11")
+                    p4_1 = st.slider("Çöp kutusu doğru kullanılmış (0-6)", 0, 6, 0)
+                    p4_2 = st.slider("Çöp kutusu taşmamış (0-6)", 0, 6, 0)
+                    p4_3 = st.slider("Çöp kutusu çevresi temiz (0-8)", 0, 8, 0)
+                
+                # 5. Genel Sınıf Yüzey Temizliği
                 with st.expander("✨ 5. Genel Sınıf Yüzey Temizliği"):
-                    p5_1 = st.slider("Duvarlar (0-5)", 0, 5, 0, key="h12")
-                    p5_2 = st.slider("Panolar (0-5)", 0, 5, 0, key="h13")
-                    p5_3 = st.slider("Tahta (0-5)", 0, 5, 0, key="h14")
-                    p5_4 = st.slider("Genel Görünüm (0-5)", 0, 5, 0, key="h15")
+                    p5_1 = st.slider("Duvarlarda kir, yazı ve düzensizlik yok (0-5)", 0, 5, 0)
+                    p5_2 = st.slider("Panolar karışık ve dağınık değil (0-5)", 0, 5, 0)
+                    p5_3 = st.slider("Tahta silinmiş, gereksiz yazı yok (0-5)", 0, 5, 0)
+                    p5_4 = st.slider("Sınıfın genel görünümü güzel (0-5)", 0, 5, 0)
 
                 if st.form_submit_button("💾 VERİYİ SİSTEME MÜHÜRLE"):
                     toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
