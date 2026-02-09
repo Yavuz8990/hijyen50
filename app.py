@@ -14,12 +14,29 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. TÜRKİYE SAATİ ---
+# --- 3. DİNAMİK SLIDER RENGİ (CSS) ---
+# Puan arttıkça kırmızıdan maviye (hijyen rengine) dönen tasarım
+st.markdown("""
+    <style>
+    /* Slider çubuğunun arka planını puana göre gradyan yapar */
+    .stSlider [data-baseweb="slider"] {
+        background: linear-gradient(to right, #ff4b4b 0%, #00d2ff 100%);
+        height: 10px;
+        border-radius: 5px;
+    }
+    /* Slider düğmesini (başlığını) özelleştirir */
+    .stSlider [data-testid="stTickBar"] {
+        display: none;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 4. TÜRKİYE SAATİ ---
 tr_timezone = pytz.timezone('Europe/Istanbul')
 guncel_an = datetime.now(tr_timezone)
 bugun = guncel_an.date()
 
-# --- 4. VERİ SİSTEMİ FONKSİYONLARI ---
+# --- 5. VERİ SİSTEMİ FONKSİYONLARI ---
 def verileri_yukle():
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
@@ -35,7 +52,7 @@ def veri_listesini_guncelle(df):
 if 'veritabani' not in st.session_state:
     st.session_state['veritabani'] = verileri_yukle()
 
-# --- 5. ŞAMPİYON VE SIRALAMA HESAPLAMA ---
+# --- 6. ŞAMPİYON VE SIRALAMA HESAPLAMA ---
 def sampiyon_bul_text(veri):
     if veri.empty: return "Henüz veri yok"
     skorlar = veri.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False)
@@ -43,99 +60,60 @@ def sampiyon_bul_text(veri):
     sampiyonlar = skorlar[skorlar == en_yuksek].index.tolist()
     return f"{', '.join(sampiyonlar)} ({int(en_yuksek)} Puan)"
 
-# --- 6. QR KOD VE YÖNLENDİRME ---
+# --- 7. QR KOD VE YÖNLENDİRME ---
 query_params = st.query_params
 url_sinif = query_params.get("sinif", None)
 default_index = 1 if url_sinif else 0 
 
-# --- 7. YAN MENÜ ---
+# --- 8. YAN MENÜ ---
 st.sidebar.title("💎 Hijyen 5.0")
 sayfa = st.sidebar.radio("Giriş Türü:", ["🏠 Ana Sayfa", "📝 Denetçi Girişi", "📊 Yönetici Paneli"], index=default_index)
 
-# --- 8. SAYFA İÇERİKLERİ ---
+# --- 9. SAYFA İÇERİKLERİ ---
 
 # --- ANA SAYFA ---
 if sayfa == "🏠 Ana Sayfa":
     df_genel = verileri_yukle()
-    
-    st.markdown("""
-        <div style="text-align: center; padding: 10px; background: rgba(0, 210, 255, 0.05); border-radius: 20px;">
-            <h1 style="font-family: 'Arial Black', sans-serif; color: #00D2FF; font-size: 70px; margin-bottom: 0px; text-shadow: 0px 0px 15px rgba(0,210,255,0.6);">
-                HİJYEN 5.0
-            </h1>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("""<div style='text-align: center; padding: 10px;'><h1 style='font-family: Arial Black; color: #00D2FF; font-size: 70px; margin-bottom: 0px; text-shadow: 0px 0px 15px rgba(0,210,255,0.6);'>HİJYEN 5.0</h1></div>""", unsafe_allow_html=True)
 
     st.write("")
-    
-    # --- AYLIK DEĞERLENDİRME ---
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
     
     st.markdown(f"""
         <div style="text-align: center; padding: 30px; border: 4px solid #CD7F32; border-radius: 20px; background: rgba(205, 127, 50, 0.1); margin-bottom: 20px;">
             <h2 style="color: #CD7F32; margin: 0; font-size: 35px;">🥉 AYIN HİJYEN ŞAMPİYONU</h2>
-            <p style="font-size: 45px; font-weight: bold; color: white; margin-top: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.5);">{sampiyon_bul_text(a_df)}</p>
+            <p style="font-size: 45px; font-weight: bold; color: white; margin-top: 15px;">{sampiyon_bul_text(a_df)}</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # --- TEKNOLOJİK LİDERLİK TABLOSU ---
     with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASINI GÖR (TÜM SINIFLAR)"):
         if not a_df.empty:
             sirali_liste = a_df.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False).reset_index()
-            
             for i, row in sirali_liste.iterrows():
-                # Derece renkleri ve ikonları
                 rank = i + 1
-                color = "#00D2FF" # Standart Teknoloji Mavisi
+                color = "#00D2FF"
                 icon = "🔹"
+                if rank == 1: color = "#FFD700"; icon = "👑"
+                elif rank == 2: color = "#C0C0C0"; icon = "⭐"
+                elif rank == 3: color = "#CD7F32"; icon = "✨"
                 
-                if rank == 1: 
-                    color = "#FFD700" # Altın
-                    icon = "👑"
-                elif rank == 2: 
-                    color = "#C0C0C0" # Gümüş
-                    icon = "⭐"
-                elif rank == 3: 
-                    color = "#CD7F32" # Bronz
-                    icon = "✨"
-                
-                # Dinamik Kart Tasarımı
                 st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; 
-                                padding: 15px 25px; margin: 8px 0; border-radius: 12px; 
-                                background: linear-gradient(90deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0.4) 100%);
-                                border: 1px solid {color}; border-left: 8px solid {color};
-                                box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
-                        <div style="display: flex; align-items: center;">
-                            <span style="font-size: 24px; font-weight: bold; color: {color}; margin-right: 20px;">#{rank}</span>
-                            <span style="font-size: 22px; font-weight: bold; color: white;">{icon} {row['Sınıf']} Sınıfı</span>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="font-size: 14px; color: {color}; opacity: 0.8; display: block;">ORTALAMA SKOR</span>
-                            <span style="font-size: 24px; font-weight: bold; color: white;">{row['Puan']:.1f}</span>
-                        </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin: 8px 0; border-radius: 12px; background: linear-gradient(90deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0.4) 100%); border: 1px solid {color}; border-left: 8px solid {color};">
+                        <span style="font-size: 22px; font-weight: bold; color: white;">#{rank} {icon} {row['Sınıf']} Sınıfı</span>
+                        <span style="font-size: 24px; font-weight: bold; color: white;">{row['Puan']:.1f}</span>
                     </div>
                 """, unsafe_allow_html=True)
-        else:
-            st.info("Sıralama için henüz yeterli veri toplanmadı.")
 
     st.write("---")
-
-    # --- GÜNÜN SÖZÜ ---
-    sozler = [
-        "🧼 'Temizlik, sağlıktan önce gelir; çünkü sağlığın koruyucusudur.'",
-        "✨ 'Geleceğin temiz okulu, bugünün bilinçli adımlarıyla inşa edilir.'",
-        "🛡️ 'Görünmez tehlikelere karşı en güçlü kalkanımız: Hijyen.'",
-        "💎 'Temizlik, başarının aynasıdır; parlayan bir gelecek temiz sınıflarda yetişir.'"
-    ]
-    st.markdown(f"<div style='text-align: center;'><p style='font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold;'>{sozler[bugun.day % 4]}</p></div>", unsafe_allow_html=True)
+    sozler = ["🧼 'Temizlik, sağlıktan önce gelir.'", "✨ 'Geleceğin temiz okulu, bugünle başlar.'", "💎 'Hijyen başarının aynasıdır.'"]
+    st.markdown(f"<div style='text-align: center;'><p style='font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold;'>{sozler[bugun.day % 3]}</p></div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try: st.image("afis.jpg", use_container_width=True)
         except: st.warning("⚠️ Afiş Bulunamadı.")
 
-# --- 📝 DENETÇİ SAYFASI ---
+# --- 📝 DENETÇİ SAYFASI (RENKLİ SLIDERLAR) ---
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
     if 'denetci_onayli' not in st.session_state: st.session_state['denetci_onayli'] = False
@@ -144,7 +122,7 @@ elif sayfa == "📝 Denetçi Girişi":
         with st.container(border=True):
             d_u = st.text_input("Kullanıcı Adı:", key="d_u")
             d_p = st.text_input("Şifre:", type="password", key="d_p")
-            if st.button("Sisteme Giriş Yap"):
+            if st.button("Giriş Yap"):
                 if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
@@ -156,6 +134,7 @@ elif sayfa == "📝 Denetçi Girişi":
             s_sinif = url_sinif
             with st.form("hassas_puanlama_formu"):
                 st.subheader(f"📋 {s_sinif} Değerlendirme Formu")
+                
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
                     p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
                     p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
@@ -181,11 +160,11 @@ elif sayfa == "📝 Denetçi Girişi":
                     toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
                     df = verileri_yukle()
                     if not df[(df['Tarih'] == bugun) & (df['Sınıf'] == s_sinif)].empty:
-                        st.error("❌ Bugün kayıt yapılmış!")
+                        st.error("❌ Bugün zaten kayıt yapılmış!")
                     else:
                         yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": s_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
                         veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                        st.success("✅ Kaydedildi!")
+                        st.success(f"✅ Kaydedildi! Puan: {toplam}")
                         st.balloons()
         else: st.error("⚠️ QR kod okutulmadı.")
         if st.button("🚪 Çıkış"):
@@ -208,13 +187,6 @@ elif sayfa == "📊 Yönetici Paneli":
     else:
         df = verileri_yukle()
         if not df.empty:
-            tab_g, tab_h, tab_a = st.tabs(["📌 Günlük", "📅 Haftalık", "📈 Aylık"])
-            with tab_g:
-                g_df = df[df['Tarih'] == bugun]
-                if not g_df.empty: st.write(g_df)
-            
-            st.divider()
-            st.subheader("📂 Kayıt Yönetimi")
             for sinif in sorted(df['Sınıf'].unique()):
                 with st.expander(f"🏫 {sinif} Kayıtları"):
                     s_df = df[df['Sınıf'] == sinif]
