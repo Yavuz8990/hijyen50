@@ -297,7 +297,7 @@ elif sayfa == "📊 Yönetici Paneli":
 
             st.divider()
             
-            # --- YÖNETİM ARAÇLARI (YENİ EKLENEN KISIM) ---
+            # --- YÖNETİM ARAÇLAR ---
             st.subheader("⚙️ Yönetim Araçları")
             
             col_ Arac1, col_Arac2 = st.columns(2)
