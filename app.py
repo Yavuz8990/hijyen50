@@ -50,18 +50,24 @@ def veri_listesini_guncelle(df):
     df.to_csv(DB_FILE, index=False)
     st.session_state['veritabani'] = df
 
-# --- GÜNLÜK DENETÇİ HAFIZA SİSTEMİ ---
+# --- GÜNLÜK DENETÇİ HAFIZA SİSTEMİ (YENİ) ---
 def gunluk_denetci_getir():
+    """Bugün için kaydedilmiş bir denetçi varsa ismini döndürür, yoksa None döner."""
     if os.path.exists(SESSION_FILE):
         try:
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
                 icerik = f.read().strip().split("|")
-                if len(icerik) == 2 and icerik[0] == str(bugun):
-                    return icerik[1]
+                if len(icerik) == 2:
+                    kayitli_tarih = icerik[0]
+                    kayitli_isim = icerik[1]
+                    # Eğer dosyadaki tarih bugüne eşitse ismi kullan
+                    if kayitli_tarih == str(bugun):
+                        return kayitli_isim
         except: pass
     return None
 
 def gunluk_denetci_kaydet(isim):
+    """Denetçi ismini bugünün tarihiyle dosyaya yazar."""
     with open(SESSION_FILE, "w", encoding="utf-8") as f:
         f.write(f"{bugun}|{isim}")
 
@@ -144,7 +150,7 @@ if sayfa == "🏠 Ana Sayfa":
 elif sayfa == "📝 Denetçi Girişi":
     st.title("📝 Denetçi Kayıt Paneli")
     
-    # --- 1. SİSTEM GİRİŞİ ---
+    # --- 1. SİSTEM GİRİŞİ (Şifre) ---
     if not st.session_state['denetci_onayli']:
         d_u = st.text_input("Kullanıcı Adı:")
         d_p = st.text_input("Şifre:", type="password")
@@ -154,24 +160,27 @@ elif sayfa == "📝 Denetçi Girişi":
                 st.rerun()
             else: st.error("Hatalı giriş.")
     else:
-        # --- 2. İSİM KONTROLÜ ---
+        # --- 2. İSİM KONTROLÜ (OTOMATİK HAFIZA) ---
+        
+        # Önce dosyadan bugünün ismini çekmeyi dene
         if st.session_state['denetci_adi'] is None:
             kayitli_isim = gunluk_denetci_getir()
             if kayitli_isim:
                 st.session_state['denetci_adi'] = kayitli_isim
                 st.success(f"🗓️ Bugünün nöbetçi denetçisi **{kayitli_isim}** olarak tanımlandı.")
         
+        # Hâlâ isim yoksa (dosyada yoksa) sor ve kaydet
         if st.session_state['denetci_adi'] is None:
             st.info("👋 Merhaba! Bugünün denetimlerini kim yapacak?")
             with st.form("isim_formu"):
                 girilen_isim = st.text_input("Adınız Soyadınız:")
                 if st.form_submit_button("✅ Görevi Başlat"):
                     if len(girilen_isim) > 2:
-                        gunluk_denetci_kaydet(girilen_isim)
+                        gunluk_denetci_kaydet(girilen_isim) # Dosyaya yaz (Bugün için hatırla)
                         st.session_state['denetci_adi'] = girilen_isim
                         st.rerun()
                     else: st.warning("Lütfen geçerli bir isim giriniz.")
-            st.stop()
+            st.stop() # İsim girilmeden aşağı geçme
             
         # --- 3. ADIM: DENETİM FORMU ---
         st.success(f"👤 Aktif Denetçi: **{st.session_state['denetci_adi']}**")
@@ -239,81 +248,62 @@ elif sayfa == "📝 Denetçi Girişi":
             st.info("Lütfen bir sınıf seçiniz veya QR kodu okutunuz.")
 
 elif sayfa == "📊 Yönetici Paneli":
-    st.title("📊 Yönetici Paneli")
+    st.title("📊 Yönetici Analiz Merkezi")
+    if 'admin_onayli' not in st.session_state: st.session_state['admin_onayli'] = False
+    
     if not st.session_state['admin_onayli']:
-        y_u = st.text_input("Yetkili ID:"); y_p = st.text_input("Şifre:", type="password")
-        if st.button("Giriş"): 
-            if y_u == YONETICI_USER and y_p == YONETICI_PASS: st.session_state['admin_onayli'] = True; st.rerun()
+        y_u = st.text_input("Yetkili ID:")
+        y_p = st.text_input("Şifre:", type="password")
+        if st.button("Veri Erişimini Aç"):
+            if y_u == YONETICI_USER and y_p == YONETICI_PASS:
+                st.session_state['admin_onayli'] = True; st.rerun()
     else:
         df = verileri_yukle()
-        
-        # --- ÜST PANEL: RAPOR VE GRAFİK BUTONLARI ---
-        col_btn1, col_btn2 = st.columns(2)
-        
-        # 1. RAPOR İNDİRME BUTONU
-        with col_btn1:
-            st.info("📥 Rapor Merkezi")
-            if not df.empty:
-                # Son 7 Günlük Veriyi Filtrele
-                haftalik_df = df[df['Tarih'] >= (bugun - timedelta(days=7))]
-                if not haftalik_df.empty:
-                    # Türkçe karakterler için utf-8-sig encoding kullanıyoruz
-                    csv_data = haftalik_df.to_csv(index=False).encode('utf-8-sig')
-                    st.download_button(
-                        label="📄 Bu Haftanın Raporunu İndir (Excel/CSV)",
-                        data=csv_data,
-                        file_name=f"haftalik_hijyen_raporu_{bugun}.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
-                else:
-                    st.warning("Son 7 güne ait veri yok.")
-            else: st.warning("Veri tabanı boş.")
-
-        # 2. 30 GÜNLÜK GRAFİK BUTONU
-        with col_btn2:
-            st.info("📈 Analiz Merkezi")
-            # Buton yerine Expander kullandık, böylece açılıp kapanabilir buton gibi çalışır
-            with st.expander("📊 30 GÜNLÜK GELİŞİM GRAFİĞİNİ GÖSTER"):
-                if not df.empty:
-                    # Son 30 Günü Filtrele
-                    aylik_df = df[df['Tarih'] >= (bugun - timedelta(days=30))].sort_values("Tarih")
-                    if not aylik_df.empty:
-                        # Plotly Line Chart
-                        fig = px.line(aylik_df, x="Tarih", y="Puan", color="Sınıf", 
-                                      markers=True, 
-                                      title="Sınıfların Son 30 Günlük Hijyen Yolculuğu",
-                                      template="plotly_dark")
-                        fig.update_layout(xaxis_title="Tarih", yaxis_title="Hijyen Puanı")
-                        st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        st.write("Son 30 güne ait grafik verisi henüz oluşmadı.")
-                else: st.write("Veri yok.")
-
-        st.divider()
-
         if not df.empty:
+            # Pasta Grafiği
+            st.subheader("📌 Günlük Hijyen Dağılımı")
             g_df = df[df['Tarih'] == bugun]
             if not g_df.empty:
-                st.subheader("📌 Günlük Durum (Bugün)")
-                st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4), use_container_width=True)
+                st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, 
+                                    color_discrete_sequence=px.colors.sequential.Tealgrn), use_container_width=True)
             
             st.divider()
-            siniflar = sorted(df['Sınıf'].unique())
-            for sinif in siniflar:
-                with st.expander(f"🏫 {sinif} Kayıtları"):
-                    sdf = df[df['Sınıf'] == sinif].sort_values(by='Tarih', ascending=False)
-                    cols = st.columns([2,2,2,1])
-                    cols[0].write("**Tarih**"); cols[1].write("**Puan**"); cols[2].write("**Denetçi**"); cols[3].write("**Sil**")
-                    for i, r in sdf.iterrows():
-                        rc = st.columns([2,2,2,1])
-                        rc[0].write(f"{r['Tarih']}"); rc[1].write(f"⭐ {r['Puan']}"); rc[2].write(f"👤 {r['Yetkili']}")
-                        if rc[3].button("Sil", key=f"s_{i}"): kayit_sil(i)
+            st.subheader("📂 Sınıf Bazlı Denetim Kayıtları")
             
+            # Sınıfları alfabetik sırala
+            sinif_listesi = sorted(df['Sınıf'].unique())
+            
+            for sinif in sinif_listesi:
+                with st.expander(f"🏫 {sinif} Sınıfı Kayıtları"):
+                    # O sınıfa ait verileri çek ve tarihe göre yeniden eskiye sırala
+                    sinif_df = df[df['Sınıf'] == sinif].sort_values(by='Tarih', ascending=False)
+                    
+                    # Tablo başlıkları için sütunlar
+                    h_col1, h_col2, h_col3, h_col4 = st.columns([2, 2, 2, 1])
+                    h_col1.write("**Tarih**")
+                    h_col2.write("**Puan**")
+                    h_col3.write("**Denetçi**") # Burası artık girilen ismi gösterecek
+                    h_col4.write("**İşlem**")
+                    
+                    for idx, row in sinif_df.iterrows():
+                        r_col1, r_col2, r_col3, r_col4 = st.columns([2, 2, 2, 1])
+                        r_col1.write(f"{row['Tarih']}")
+                        r_col2.write(f"⭐ {row['Puan']}")
+                        r_col3.write(f"👤 {row['Yetkili']}") 
+                        # Her satır için benzersiz bir anahtar (key) ile silme butonu
+                        if r_col4.button("Sil", key=f"sil_{idx}"):
+                            kayit_sil(idx)
+                            st.success(f"Kayıt silindi!")
+
             st.divider()
-            if st.button("🚨 Tüm Sistemi Sıfırla"):
+            if st.button("🚨 Tüm Sistemi Sıfırla (Kritik)"):
                 veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
                 st.rerun()
-        else: st.info("Veri yok.")
-        
-        if st.button("🚪 Güvenli Çıkış"): st.session_state['admin_onayli'] = False; st.rerun()
+                
+        else:
+            st.info("Henüz kaydedilmiş bir veri bulunmuyor.")
+
+        if st.button("🚪 Güvenli Çıkış"):
+            st.session_state['admin_onayli'] = False; st.rerun()
+
+
