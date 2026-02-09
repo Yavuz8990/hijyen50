@@ -260,25 +260,64 @@ elif sayfa == "📊 Yönetici Paneli":
     else:
         df = verileri_yukle()
         if not df.empty:
-            # Pasta Grafiği
+            
+            # --- 1. AYLIK DURUM ÖZETİ (YENİ EKLENEN KISIM) ---
+            st.subheader("🏆 Aylık Performans Özeti")
+            
+            # Son 30 günün verisini filtrele
+            a_df = df[df['Tarih'] >= (bugun - timedelta(days=30))]
+            
+            col_ozet1, col_ozet2 = st.columns([1, 2])
+            
+            with col_ozet1:
+                # Şampiyon Kutusu
+                st.markdown(f"""
+                    <div style="text-align: center; padding: 20px; border: 2px solid #CD7F32; border-radius: 15px; background: rgba(205, 127, 50, 0.1); height: 100%;">
+                        <h3 style="color: #CD7F32; margin: 0; font-size: 20px;">🥉 AYIN ŞAMPİYONU</h3>
+                        <p style="font-size: 24px; font-weight: bold; color: #00D2FF; margin-top: 15px;">{sampiyon_bul_text(a_df)}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col_ozet2:
+                # Sıralama Listesi (Expander içinde)
+                with st.expander("📊 AYLIK HİJYEN LİGİ SIRALAMASI", expanded=True):
+                    if not a_df.empty:
+                        sirali_liste = a_df.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False).reset_index()
+                        # Sadece ilk 3'ü değil, hepsini ufak liste halinde gösterelim
+                        st.dataframe(
+                            sirali_liste.style.format({"Puan": "{:.2f}"}), 
+                            column_config={
+                                "Sınıf": st.column_config.TextColumn("Sınıf"),
+                                "Puan": st.column_config.ProgressColumn("Ortalama Puan", format="%.2f", min_value=0, max_value=85)
+                            },
+                            hide_index=True,
+                            use_container_width=True
+                        )
+                    else:
+                        st.info("Son 30 güne ait veri yok.")
+
+            st.divider()
+
+            # --- 2. PASTA GRAFİĞİ ---
             st.subheader("📌 Günlük Hijyen Dağılımı")
             g_df = df[df['Tarih'] == bugun]
             if not g_df.empty:
                 st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4, 
                                     color_discrete_sequence=px.colors.sequential.Tealgrn), use_container_width=True)
+            else:
+                st.info("Bugün henüz giriş yapılmadı.")
             
             st.divider()
-            st.subheader("📂 Sınıf Bazlı Denetim Kayıtları")
+
+            # --- 3. SINIF BAZLI KAYITLAR ---
+            st.subheader("📂 Sınıf Bazlı Detaylı Kayıtlar")
             
-            # Sınıfları alfabetik sırala
             sinif_listesi = sorted(df['Sınıf'].unique())
             
             for sinif in sinif_listesi:
                 with st.expander(f"🏫 {sinif} Sınıfı Kayıtları"):
-                    # O sınıfa ait verileri çek ve tarihe göre yeniden eskiye sırala
                     sinif_df = df[df['Sınıf'] == sinif].sort_values(by='Tarih', ascending=False)
                     
-                    # Tablo başlıkları için sütunlar
                     h_col1, h_col2, h_col3, h_col4 = st.columns([2, 2, 2, 1])
                     h_col1.write("**Tarih**")
                     h_col2.write("**Puan**")
@@ -290,21 +329,18 @@ elif sayfa == "📊 Yönetici Paneli":
                         r_col1.write(f"{row['Tarih']}")
                         r_col2.write(f"⭐ {row['Puan']}")
                         r_col3.write(f"👤 {row['Yetkili']}") 
-                        # Her satır için benzersiz bir anahtar (key) ile silme butonu
                         if r_col4.button("Sil", key=f"sil_{idx}"):
                             kayit_sil(idx)
                             st.success(f"Kayıt silindi!")
 
             st.divider()
             
-            # --- YÖNETİM ARAÇLARI (DÜZELTİLMİŞ KISIM) ---
+            # --- 4. YÖNETİM ARAÇLARI ---
             st.subheader("⚙️ Yönetim Araçları")
             
-            # BURADAKİ BOŞLUK HATASI GİDERİLDİ:
             col_Arac1, col_Arac2 = st.columns(2)
             
             with col_Arac1:
-                # DENETÇİ İSMİNİ SIFIRLAMA BUTONU
                 if st.button("🔄 Günlük Denetçi İsmini Sıfırla"):
                     if os.path.exists(SESSION_FILE):
                         os.remove(SESSION_FILE)
@@ -315,7 +351,6 @@ elif sayfa == "📊 Yönetici Paneli":
                         st.info("ℹ️ Zaten kayıtlı bir günlük denetçi ismi yok.")
 
             with col_Arac2:
-                # TÜM VERİTABANINI SIFIRLAMA BUTONU
                 if st.button("🚨 Tüm Veritabanını Sıfırla (Kritik)"):
                     veri_listesini_guncelle(pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"]))
                     st.rerun()
@@ -325,3 +360,4 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
+
