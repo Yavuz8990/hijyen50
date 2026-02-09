@@ -3,7 +3,6 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta
 import pytz
-import plotly.express as px
 
 # --- 1. YETKİ VE DOSYA AYARLARI ---
 DENETCI_USER = "admin"
@@ -69,33 +68,54 @@ if sayfa == "🏠 Ana Sayfa":
 
     st.write("")
     
-    # --- AYLIK DEĞERLENDİRME VE SIRALAMA (YENİLENEN BÖLÜM) ---
+    # --- AYLIK DEĞERLENDİRME ---
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
     
-    # Ana Görünüm: Ayın Şampiyonu
     st.markdown(f"""
         <div style="text-align: center; padding: 30px; border: 4px solid #CD7F32; border-radius: 20px; background: rgba(205, 127, 50, 0.1); margin-bottom: 20px;">
             <h2 style="color: #CD7F32; margin: 0; font-size: 35px;">🥉 AYIN HİJYEN ŞAMPİYONU</h2>
-            <p style="font-size: 40px; font-weight: bold; color: white; margin-top: 15px;">{sampiyon_bul_text(a_df)}</p>
+            <p style="font-size: 45px; font-weight: bold; color: white; margin-top: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.5);">{sampiyon_bul_text(a_df)}</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Açılabilir Tüm Sınıf Sıralaması
-    with st.expander("📊 Tüm Sınıfların Aylık Başarı Sıralamasını Gör"):
+    # --- TEKNOLOJİK LİDERLİK TABLOSU ---
+    with st.expander("🏆 AYLIK HİJYEN LİGİ SIRALAMASINI GÖR (TÜM SINIFLAR)"):
         if not a_df.empty:
-            # Ortalama puanları hesapla ve sırala
             sirali_liste = a_df.groupby("Sınıf")["Puan"].mean().sort_values(ascending=False).reset_index()
-            sirali_liste.columns = ["Sınıf", "Ortalama Puan"]
-            sirali_liste.index = sirali_liste.index + 1 # 1'den başlasın
             
-            # Tabloyu göster
-            st.table(sirali_liste.style.format({"Ortalama Puan": "{:.1f}"}))
-            
-            # Görsel Grafik (Bar Chart)
-            fig = px.bar(sirali_liste, x="Sınıf", y="Ortalama Puan", 
-                         title="Aylık Hijyen Ligi Puan Tablosu",
-                         color="Ortalama Puan", color_continuous_scale="Viridis")
-            st.plotly_chart(fig, use_container_width=True)
+            for i, row in sirali_liste.iterrows():
+                # Derece renkleri ve ikonları
+                rank = i + 1
+                color = "#00D2FF" # Standart Teknoloji Mavisi
+                icon = "🔹"
+                
+                if rank == 1: 
+                    color = "#FFD700" # Altın
+                    icon = "👑"
+                elif rank == 2: 
+                    color = "#C0C0C0" # Gümüş
+                    icon = "⭐"
+                elif rank == 3: 
+                    color = "#CD7F32" # Bronz
+                    icon = "✨"
+                
+                # Dinamik Kart Tasarımı
+                st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; align-items: center; 
+                                padding: 15px 25px; margin: 8px 0; border-radius: 12px; 
+                                background: linear-gradient(90deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0.4) 100%);
+                                border: 1px solid {color}; border-left: 8px solid {color};
+                                box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-size: 24px; font-weight: bold; color: {color}; margin-right: 20px;">#{rank}</span>
+                            <span style="font-size: 22px; font-weight: bold; color: white;">{icon} {row['Sınıf']} Sınıfı</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 14px; color: {color}; opacity: 0.8; display: block;">ORTALAMA SKOR</span>
+                            <span style="font-size: 24px; font-weight: bold; color: white;">{row['Puan']:.1f}</span>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
         else:
             st.info("Sıralama için henüz yeterli veri toplanmadı.")
 
@@ -106,24 +126,14 @@ if sayfa == "🏠 Ana Sayfa":
         "🧼 'Temizlik, sağlıktan önce gelir; çünkü sağlığın koruyucusudur.'",
         "✨ 'Geleceğin temiz okulu, bugünün bilinçli adımlarıyla inşa edilir.'",
         "🛡️ 'Görünmez tehlikelere karşı en güçlü kalkanımız: Hijyen.'",
-        "🌊 'Büyük değişimler, küçük bir temizlik alışkanlığıyla başlar.'",
         "💎 'Temizlik, başarının aynasıdır; parlayan bir gelecek temiz sınıflarda yetişir.'"
     ]
-    secilen_soz = sozler[bugun.day % 5]
+    st.markdown(f"<div style='text-align: center;'><p style='font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold;'>{sozler[bugun.day % 4]}</p></div>", unsafe_allow_html=True)
 
-    st.markdown(f"""
-        <div style="text-align: center; margin-bottom: 25px; padding: 20px; border-bottom: 3px solid #00D2FF; background-color: rgba(0, 210, 255, 0.05); border-radius: 15px;">
-            <p style="font-family: 'Georgia', serif; font-size: 32px; color: #00D2FF; font-style: italic; font-weight: bold; line-height: 1.4;">
-                {secilen_soz}
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # --- AFİŞ ---
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         try: st.image("afis.jpg", use_container_width=True)
-        except: st.warning("⚠️ `afis.jpg` bulunamadı.")
+        except: st.warning("⚠️ Afiş Bulunamadı.")
 
 # --- 📝 DENETÇİ SAYFASI ---
 elif sayfa == "📝 Denetçi Girişi":
@@ -134,7 +144,7 @@ elif sayfa == "📝 Denetçi Girişi":
         with st.container(border=True):
             d_u = st.text_input("Kullanıcı Adı:", key="d_u")
             d_p = st.text_input("Şifre:", type="password", key="d_p")
-            if st.button("Giriş Yap"):
+            if st.button("Sisteme Giriş Yap"):
                 if d_u == DENETCI_USER and d_p == DENETCI_PASS:
                     st.session_state['denetci_onayli'] = True
                     st.rerun()
@@ -146,7 +156,6 @@ elif sayfa == "📝 Denetçi Girişi":
             s_sinif = url_sinif
             with st.form("hassas_puanlama_formu"):
                 st.subheader(f"📋 {s_sinif} Değerlendirme Formu")
-                
                 with st.expander("🌬️ 1. Havalandırma ve Hava Kalitesi"):
                     p1_1 = st.slider("Teneffüslerde sınıf havalandırılmış (0-10)", 0, 10, 0)
                     p1_2 = st.slider("Sınıfta ağır, rahatsız edici koku yok (0-10)", 0, 10, 0)
@@ -176,7 +185,7 @@ elif sayfa == "📝 Denetçi Girişi":
                     else:
                         yeni = pd.DataFrame([{"Tarih": bugun, "Sınıf": s_sinif, "Puan": toplam, "Yetkili": DENETCI_USER}])
                         veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
-                        st.success(f"✅ Kaydedildi! Puan: {toplam}")
+                        st.success("✅ Kaydedildi!")
                         st.balloons()
         else: st.error("⚠️ QR kod okutulmadı.")
         if st.button("🚪 Çıkış"):
@@ -202,7 +211,7 @@ elif sayfa == "📊 Yönetici Paneli":
             tab_g, tab_h, tab_a = st.tabs(["📌 Günlük", "📅 Haftalık", "📈 Aylık"])
             with tab_g:
                 g_df = df[df['Tarih'] == bugun]
-                if not g_df.empty: st.plotly_chart(px.pie(g_df, values='Puan', names='Sınıf', hole=0.4), use_container_width=True)
+                if not g_df.empty: st.write(g_df)
             
             st.divider()
             st.subheader("📂 Kayıt Yönetimi")
