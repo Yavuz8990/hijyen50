@@ -15,20 +15,10 @@ DB_FILE = "denetimler.csv"
 # --- 2. SAYFA AYARLARI ---
 st.set_page_config(page_title="H5.0 | Geleceğin Temiz Okulu", page_icon="🧼", layout="wide")
 
-# --- 3. ÖZEL TASARIM (CSS) - SADE ÇİZGİ VE BEYAZ METİN ---
+# --- 3. ÖZEL TASARIM (CSS) ---
+# Sadece beyaz metin odaklı, slider çubuğuna müdahale etmeyen sade yapı
 st.markdown("""
     <style>
-    /* Slider'ın o kırmızı dolgu kısmını etkisiz hale getir ve sadeleştir */
-    .stSlider [data-baseweb="slider"] > div:first-child {
-        background-color: #31333F !important; /* Arka planla uyumlu koyu renk */
-        height: 4px;
-    }
-    
-    /* Seçili olan (dolan) kısmı da sade bir gri/beyaz tonuna çek */
-    .stSlider [data-baseweb="slider"] > div > div {
-        background-color: #dee2e6 !important;
-    }
-
     /* Slider başlıklarını, rakamları ve hareket eden sayıyı BEYAZ yap */
     .stSlider [data-testid="stWidgetLabel"] p, 
     .stSlider div[data-testid="stThumbValue"],
@@ -42,6 +32,11 @@ st.markdown("""
     .st-emotion-cache-p4mowd, .st-emotion-cache-1h9vt8z p {
         color: #FFFFFF !important;
         font-weight: bold !important;
+    }
+    
+    /* Sayfa başlıkları ve alt başlıklar */
+    h1, h2, h3, .stSubheader p {
+        color: #FFFFFF !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -90,7 +85,7 @@ if sayfa == "🏠 Ana Sayfa":
     st.markdown("<h1 style='text-align: center; color: #00D2FF;'>HİJYEN 5.0</h1>", unsafe_allow_html=True)
     
     a_df = df_genel[df_genel['Tarih'] >= (bugun - timedelta(days=30))]
-    st.markdown(f"<div style='text-align: center; border: 2px solid #CD7F32; border-radius: 15px; padding: 15px;'><h3>🥉 AYIN HİJYEN ŞAMPİYONU</h3><p style='font-size: 30px; font-weight: bold; color: #FFFFFF;'>{sampiyon_bul_text(a_df)}</p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center; border: 2px solid #CD7F32; border-radius: 15px; padding: 15px;'><h3>🥉 AYIN HİJYEN ŞAMPİYONU</h3><p style='font-size: 30px; font-weight: bold;'>{sampiyon_bul_text(a_df)}</p></div>", unsafe_allow_html=True)
 
     with st.expander("🏆 AYLIK LİDERLİK TABLOSU"):
         if not a_df.empty:
