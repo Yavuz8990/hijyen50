@@ -38,19 +38,13 @@ guncel_an = datetime.now(tr_timezone)
 bugun = guncel_an.date()
 
 def verileri_yukle():
-    sutunlar = ["Tarih", "Sınıf", "Puan", "Yetkili", "K1_Hava", "K2_Masa", "K3_Zemin", "K4_Cop", "K5_Genel"]
     if os.path.exists(DB_FILE):
         try:
             df = pd.read_csv(DB_FILE)
-            # Eğer eski dosya varsa ve yeni sütunlar eksikse onları 0 olarak ekle
-            for col in sutunlar:
-                if col not in df.columns:
-                    df[col] = 0
-            
             df['Tarih'] = pd.to_datetime(df['Tarih']).dt.date
             return df
-        except: return pd.DataFrame(columns=sutunlar)
-    return pd.DataFrame(columns=sutunlar)
+        except: return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
+    return pd.DataFrame(columns=["Tarih", "Sınıf", "Puan", "Yetkili"])
 
 def veri_listesini_guncelle(df):
     df.to_csv(DB_FILE, index=False)
@@ -233,27 +227,16 @@ elif sayfa == "📝 Denetçi Girişi":
                         zaten_yapildi_mi = df[(df['Tarih'] == bugun) & (df['Sınıf'] == secilen_sinif)]
                         
                         if not zaten_yapildi_mi.empty:
-                            st.error(f"⚠️ DİKKAT: {secilen_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış!")
+                            st.error(f"⚠️ DİKKAT: {secilen_sinif} sınıfı için bugün zaten bir değerlendirme yapılmış! Günde sadece 1 kayıt girebilirsiniz.")
                         else:
-                            # 5 Ana Maddenin Puanlarını Ayrı Ayrı Hesapla (Hepsi 20 Üzerinden)
-                            k1 = p1_1 + p1_2                 # Havalandırma
-                            k2 = p2_1 + p2_2 + p2_3          # Masa
-                            k3 = p3_1 + p3_2 + p3_3          # Zemin
-                            k4 = p4_1 + p4_2 + p4_3          # Çöp
-                            k5 = p5_1 + p5_2 + p5_3 + p5_4   # Genel
+                            toplam = p1_1+p1_2+p2_1+p2_2+p2_3+p3_1+p3_2+p3_3+p4_1+p4_2+p4_3+p5_1+p5_2+p5_3+p5_4
                             
-                            toplam = k1 + k2 + k3 + k4 + k5
-                            
+                            # BURADA YETKİLİ KISMINA ARTIK İSİM KAYDEDİLİYOR
                             yeni = pd.DataFrame([{
                                 "Tarih": bugun, 
                                 "Sınıf": secilen_sinif, 
                                 "Puan": toplam, 
-                                "Yetkili": st.session_state['denetci_adi'],
-                                "K1_Hava": k1,
-                                "K2_Masa": k2,
-                                "K3_Zemin": k3,
-                                "K4_Cop": k4,
-                                "K5_Genel": k5
+                                "Yetkili": st.session_state['denetci_adi'] # Değişen kısım burası
                             }])
                             
                             veri_listesini_guncelle(pd.concat([df, yeni], ignore_index=True))
@@ -377,5 +360,3 @@ elif sayfa == "📊 Yönetici Paneli":
 
         if st.button("🚪 Güvenli Çıkış"):
             st.session_state['admin_onayli'] = False; st.rerun()
-
-
